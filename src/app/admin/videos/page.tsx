@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
     Search,
     Filter,
@@ -12,76 +12,71 @@ import {
     Play,
     ChevronLeft,
     ChevronRight,
+    Users,
+    Clock,
+    TrendingUp,
+    PlayCircle,
+    AlertCircle,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { videoService, Video, VideoStats } from '@/services/admin/videoService';
+import { toast } from 'sonner';
 
 export default function AdminVideosPage() {
     const [isDarkMode] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedFilter, setSelectedFilter] = useState('all');
+    const [videos, setVideos] = useState<Video[]>([]);
+    const [stats, setStats] = useState<VideoStats | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isStatsLoading, setIsStatsLoading] = useState(true);
+    const [pagination, setPagination] = useState({
+        total: 0,
+        totalPages: 0,
+        perPage: 10
+    });
 
-    const videos = [
-        {
-            id: 'VID-001',
-            title: 'Product Demo Tutorial',
-            owner: 'Sarah Chen',
-            ownerEmail: 'sarah.chen@company.com',
-            duration: '12:34',
-            views: 2456,
-            visibility: 'public',
-            createdAt: 'Mar 5, 2026',
-            size: '245 MB',
-            thumbnail: 'SC',
-        },
-        {
-            id: 'VID-002',
-            title: 'Team Standup - March 6',
-            owner: 'Alex Kim',
-            ownerEmail: 'alex.kim@tech.co',
-            duration: '8:12',
-            views: 89,
-            visibility: 'private',
-            createdAt: 'Mar 6, 2026',
-            size: '156 MB',
-            thumbnail: 'AK',
-        },
-        {
-            id: 'VID-003',
-            title: 'Q1 Marketing Review',
-            owner: 'Emily Rodriguez',
-            ownerEmail: 'emily.r@agency.com',
-            duration: '24:56',
-            views: 1234,
-            visibility: 'public',
-            createdAt: 'Mar 4, 2026',
-            size: '512 MB',
-            thumbnail: 'ER',
-        },
-        {
-            id: 'VID-004',
-            title: 'Bug Fix Walkthrough',
-            owner: 'John Doe',
-            ownerEmail: 'john.doe@example.com',
-            duration: '5:43',
-            views: 456,
-            visibility: 'private',
-            createdAt: 'Mar 3, 2026',
-            size: '98 MB',
-            thumbnail: 'JD',
-        },
-        {
-            id: 'VID-005',
-            title: 'Client Presentation - Acme Corp',
-            owner: 'Mike Wilson',
-            ownerEmail: 'mike.w@startup.io',
-            duration: '18:29',
-            views: 3421,
-            visibility: 'public',
-            createdAt: 'Mar 2, 2026',
-            size: '387 MB',
-            thumbnail: 'MW',
-        },
-    ];
+    const fetchStats = useCallback(async () => {
+        try {
+            setIsStatsLoading(true);
+            const response = await videoService.getVideoStats();
+            setStats(response.data);
+        } catch (error: any) {
+            console.error("Failed to fetch video stats:", error);
+        } finally {
+            setIsStatsLoading(false);
+        }
+    }, []);
+
+    const fetchVideos = useCallback(async (page: number) => {
+        try {
+            setIsLoading(true);
+            const response = await videoService.getVideos(page, 10);
+            if (response.status === 'success') {
+                setVideos(response.data.results);
+                setPagination({
+                    total: response.data.pagination.total,
+                    totalPages: response.data.pagination.total_pages,
+                    perPage: response.data.pagination.per_page
+                });
+            }
+        } catch (error: any) {
+            toast.error(error.message || "Failed to fetch videos");
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchVideos(currentPage);
+        fetchStats();
+    }, [currentPage, fetchVideos, fetchStats]);
+
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
 
     return (
         <AdminLayout>
@@ -115,6 +110,67 @@ export default function AdminVideosPage() {
                         <Download size={18} strokeWidth={1.5} />
                         Export Data
                     </button>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0">
+                    {isStatsLoading ? (
+                        Array.from({ length: 4 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="min-w-[260px] flex-shrink-0 lg:min-w-0 rounded-2xl p-6 shadow-sm animate-pulse"
+                                style={{
+                                    backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
+                                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
+                                }}
+                            >
+                                <div className="w-12 h-12 rounded-xl bg-slate-100 mb-4" />
+                                <div className="h-4 w-24 bg-slate-100 rounded mb-2" />
+                                <div className="h-8 w-32 bg-slate-100 rounded mb-1" />
+                                <div className="h-3 w-40 bg-slate-50 rounded" />
+                            </div>
+                        ))
+                    ) : stats ? (
+                        <>
+                            {[
+                                { label: 'Total Videos', value: stats.total_videos.value, change: stats.total_videos.change, trend: stats.total_videos.trend, icon: PlayCircle, color: '#8c00ff' },
+                                { label: 'Active Recordings', value: stats.active_recordings.value, change: stats.active_recordings.change, trend: stats.active_recordings.trend, icon: TrendingUp, color: '#22c55e' },
+                                { label: 'New Videos (7d)', value: stats.new_videos_7d.value, change: stats.new_videos_7d.change, trend: stats.new_videos_7d.trend, icon: Clock, color: '#3b82f6' },
+                                { label: 'Reported Videos', value: stats.reported_videos.value, change: stats.reported_videos.change, trend: stats.reported_videos.trend, icon: AlertCircle, color: '#ef4444' },
+                            ].map((stat, index) => (
+                                <div
+                                    key={index}
+                                    className="min-w-[260px] flex-shrink-0 lg:min-w-0 rounded-2xl p-6 shadow-sm"
+                                    style={{
+                                        backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
+                                        border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
+                                    }}
+                                >
+                                    <div
+                                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                                        style={{ backgroundColor: `${stat.color}15` }}
+                                    >
+                                        <stat.icon size={24} strokeWidth={1.5} style={{ color: stat.color }} />
+                                    </div>
+                                    <p
+                                        className="text-[12px] leading-[18px] font-medium mb-2"
+                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
+                                    >
+                                        {stat.label}
+                                    </p>
+                                    <h3
+                                        className="text-[28px] leading-[36px] font-semibold mb-1"
+                                        style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
+                                    >
+                                        {stat.value.toLocaleString()}
+                                    </h3>
+                                    <span className="text-[12px] leading-[18px] font-medium" style={{ color: '#22c55e' }}>
+                                        {stat.change} from last week
+                                    </span>
+                                </div>
+                            ))}
+                        </>
+                    ) : null}
                 </div>
 
                 {/* Filters */}
@@ -214,19 +270,13 @@ export default function AdminVideosPage() {
                                         className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
                                         style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
                                     >
-                                        Views
-                                    </th>
-                                    <th
-                                        className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
                                         Visibility
                                     </th>
                                     <th
                                         className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
                                         style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
                                     >
-                                        Size
+                                        Status
                                     </th>
                                     <th
                                         className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
@@ -243,144 +293,177 @@ export default function AdminVideosPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {videos.map((video) => (
-                                    <tr
-                                        key={video.id}
-                                        className="transition-colors hover:bg-gray-50/50 dark:hover:bg-white/5"
-                                        style={{
-                                            borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC'}`,
-                                        }}
-                                    >
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className="w-16 h-10 rounded-lg flex items-center justify-center relative overflow-hidden shadow-inner"
-                                                    style={{
-                                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                                    }}
-                                                >
-                                                    <Play size={16} strokeWidth={1.5} color="#ffffff" />
-                                                </div>
-                                                <div className="max-w-xs">
-                                                    <div
-                                                        className="text-[14px] leading-[22px] font-medium truncate"
-                                                        style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                                    >
-                                                        {video.title}
-                                                    </div>
-                                                    <div
-                                                        className="text-[12px] leading-[18px]"
-                                                        style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                                                    >
-                                                        {video.id}
+                                {isLoading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <tr key={i} className="animate-pulse">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-16 h-10 rounded-lg bg-slate-100" />
+                                                    <div className="space-y-2">
+                                                        <div className="h-4 w-32 bg-slate-100 rounded" />
+                                                        <div className="h-3 w-20 bg-slate-50 rounded" />
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div>
-                                                <div
-                                                    className="text-[14px] leading-[22px] font-medium"
-                                                    style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                                >
-                                                    {video.owner}
-                                                </div>
-                                                <div
-                                                    className="text-[12px] leading-[18px]"
-                                                    style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                                                >
-                                                    {video.ownerEmail}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className="text-[14px] leading-[22px] font-mono"
-                                                style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                            >
-                                                {video.duration}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className="text-[14px] leading-[22px]"
-                                                style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                            >
-                                                {video.views.toLocaleString()}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className="inline-flex px-3 py-1 rounded-full text-[12px] leading-[18px] font-medium capitalize"
-                                                style={{
-                                                    backgroundColor:
-                                                        video.visibility === 'public'
-                                                            ? 'rgba(34, 197, 94, 0.1)'
-                                                            : 'rgba(100, 116, 139, 0.1)',
-                                                    color: video.visibility === 'public' ? '#22c55e' : '#64748B',
-                                                }}
-                                            >
-                                                {video.visibility}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className="text-[14px] leading-[22px]"
-                                                style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                            >
-                                                {video.size}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className="text-[14px] leading-[22px]"
-                                                style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                                            >
-                                                {video.createdAt}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-gray-100 dark:hover:bg-white/10"
-                                                    style={{
-                                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
-                                                    }}
-                                                >
-                                                    <Eye
-                                                        size={16}
-                                                        strokeWidth={1.5}
-                                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                                    />
-                                                </button>
-                                                <button
-                                                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-gray-100 dark:hover:bg-white/10"
-                                                    style={{
-                                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
-                                                    }}
-                                                >
-                                                    <Link2
-                                                        size={16}
-                                                        strokeWidth={1.5}
-                                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                                    />
-                                                </button>
-                                                <button
-                                                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-gray-100 dark:hover:bg-white/10"
-                                                    style={{
-                                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
-                                                    }}
-                                                >
-                                                    <MoreVertical
-                                                        size={16}
-                                                        strokeWidth={1.5}
-                                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                                    />
-                                                </button>
-                                            </div>
+                                            </td>
+                                            <td colSpan={7} className="px-6 py-4">
+                                                <div className="h-4 w-full bg-slate-100 rounded" />
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : videos.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={8} className="px-6 py-10 text-center text-slate-500">
+                                            No videos found.
                                         </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    videos.map((video) => {
+                                        const formattedDate = video.created_at ? new Date(video.created_at).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        }) : 'N/A';
+
+                                        return (
+                                            <tr
+                                                key={video.id}
+                                                className="transition-colors hover:bg-gray-50/50 dark:hover:bg-white/5"
+                                                style={{
+                                                    borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC'}`,
+                                                }}
+                                            >
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        {video.thumbnail ? (
+                                                            <img
+                                                                src={video.thumbnail}
+                                                                alt={video.title}
+                                                                className="w-16 h-10 rounded-lg object-cover shadow-sm bg-slate-100"
+                                                            />
+                                                        ) : (
+                                                            <div
+                                                                className="w-16 h-10 rounded-lg flex items-center justify-center relative overflow-hidden shadow-inner"
+                                                                style={{
+                                                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                                }}
+                                                            >
+                                                                <Play size={16} strokeWidth={1.5} color="#ffffff" />
+                                                            </div>
+                                                        )}
+                                                        <div className="max-w-xs">
+                                                            <div
+                                                                className="text-[14px] leading-[22px] font-medium truncate"
+                                                                style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
+                                                            >
+                                                                {video.title}
+                                                            </div>
+                                                            <div
+                                                                className="text-[12px] leading-[18px]"
+                                                                style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
+                                                            >
+                                                                {video.encrypted_id}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div>
+                                                        <div
+                                                            className="text-[14px] leading-[22px] font-medium"
+                                                            style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
+                                                        >
+                                                            {video.creator}
+                                                        </div>
+                                                        <div
+                                                            className="text-[12px] leading-[18px]"
+                                                            style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
+                                                        >
+                                                            {video.creator_email}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span
+                                                        className="text-[14px] leading-[22px] font-mono"
+                                                        style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
+                                                    >
+                                                        {formatDuration(video.duration)}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span
+                                                        className="text-[14px] leading-[22px]"
+                                                        style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
+                                                    >
+                                                        Public
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span
+                                                        className="inline-flex px-3 py-1 rounded-full text-[12px] leading-[18px] font-medium capitalize"
+                                                        style={{
+                                                            backgroundColor:
+                                                                video.status === 'completed'
+                                                                    ? 'rgba(34, 197, 94, 0.1)'
+                                                                    : 'rgba(100, 116, 139, 0.1)',
+                                                            color: video.status === 'completed' ? '#22c55e' : '#64748B',
+                                                        }}
+                                                    >
+                                                        {video.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span
+                                                        className="text-[14px] leading-[22px]"
+                                                        style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
+                                                    >
+                                                        {formattedDate}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-gray-100 dark:hover:bg-white/10"
+                                                            style={{
+                                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
+                                                            }}
+                                                        >
+                                                            <Eye
+                                                                size={16}
+                                                                strokeWidth={1.5}
+                                                                style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
+                                                            />
+                                                        </button>
+                                                        <button
+                                                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-gray-100 dark:hover:bg-white/10"
+                                                            style={{
+                                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
+                                                            }}
+                                                        >
+                                                            <Link2
+                                                                size={16}
+                                                                strokeWidth={1.5}
+                                                                style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
+                                                            />
+                                                        </button>
+                                                        <button
+                                                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-gray-100 dark:hover:bg-white/10"
+                                                            style={{
+                                                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
+                                                            }}
+                                                        >
+                                                            <MoreVertical
+                                                                size={16}
+                                                                strokeWidth={1.5}
+                                                                style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
+                                                            />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -396,12 +479,13 @@ export default function AdminVideosPage() {
                             className="text-[13px] leading-[20px]"
                             style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
                         >
-                            Showing 1-5 of 45,231 videos
+                            Showing {(currentPage - 1) * pagination.perPage + 1}-{Math.min(currentPage * pagination.perPage, pagination.total)} of {pagination.total.toLocaleString()} videos
                         </span>
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-gray-100 dark:hover:bg-white/10"
+                                disabled={currentPage === 1 || isLoading}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{
                                     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
                                     border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
@@ -415,7 +499,8 @@ export default function AdminVideosPage() {
                             </button>
                             <button
                                 onClick={() => setCurrentPage(currentPage + 1)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-gray-100 dark:hover:bg-white/10"
+                                disabled={currentPage >= pagination.totalPages || isLoading}
+                                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{
                                     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
                                     border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
