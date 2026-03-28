@@ -33,6 +33,18 @@ export interface ActivityResponse {
     data: RecentActivity[];
 }
 
+export interface DurationStats {
+    name: string;
+    value: number;
+    color: string;
+}
+
+export interface DurationResponse {
+    status: string;
+    message: string;
+    data: DurationStats[];
+}
+
 export interface StatsResponse {
     status: string;
     message: string;
@@ -50,6 +62,10 @@ export const dashboardService = {
     },
     getRecentActivity: async (limit: number = 10): Promise<ActivityResponse> => {
         const response = await api.get<ActivityResponse>(`/api/v1/admin/dashboard/activity?limit=${limit}`);
+        return response.data;
+    },
+    getDurationStats: async (): Promise<DurationResponse> => {
+        const response = await api.get<DurationResponse>('/api/v1/admin/dashboard/duration');
         return response.data;
     }
 };

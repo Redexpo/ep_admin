@@ -17,7 +17,10 @@ import {
     Activity,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { dashboardService, DashboardStats, RecentActivity, GrowthData } from '@/services/admin/dashboardService';
+import { dashboardService, DashboardStats, RecentActivity, GrowthData, DurationStats } from '@/services/admin/dashboardService';
+import { StorageTrendChart } from '@/components/admin/charts/StorageTrendChart';
+import { EngagementChart } from '@/components/admin/charts/EngagementChart';
+import { DurationDonutChart } from '@/components/admin/charts/DurationDonutChart';
 import {
     ChartContainer,
     ChartTooltip,
@@ -55,7 +58,9 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [activity, setActivity] = useState<RecentActivity[]>([]);
     const [growthData, setGrowthData] = useState<GrowthData | null>(null);
+    const [durationData, setDurationData] = useState<DurationStats[]>([]);
     const [timeRange, setTimeRange] = useState(7); // Default 7 days
+    const [isDurationLoading, setIsDurationLoading] = useState(true);
 
     const fetchSummaryAndActivity = useCallback(async () => {
         try {
@@ -97,6 +102,24 @@ export default function AdminDashboard() {
     useEffect(() => {
         fetchSummaryAndActivity();
     }, [fetchSummaryAndActivity]);
+
+    const fetchDurationData = useCallback(async () => {
+        try {
+            setIsDurationLoading(true);
+            const response = await dashboardService.getDurationStats();
+            if (response.status === 'success') {
+                setDurationData(response.data);
+            }
+        } catch (error: any) {
+            console.error("Failed to fetch duration stats", error);
+        } finally {
+            setIsDurationLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchDurationData();
+    }, [fetchDurationData]);
 
     useEffect(() => {
         fetchGrowthData();
@@ -234,9 +257,8 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Charts and Activity */}
-                {/* Chart & Recent Activity Row (Now stacked) */}
-                <div className="space-y-6">
-                    {/* User Growth Chart - Now FULL WIDTH */}
+                <div className="space-y-8">
+                    {/* User Growth Chart - Full Width */}
                     <div
                         className="w-full rounded-2xl p-6 shadow-sm flex flex-col"
                         style={{
@@ -246,20 +268,11 @@ export default function AdminDashboard() {
                     >
                         <div className="flex items-center justify-between mb-8">
                             <div>
-                                <h3
-                                    className="text-[18px] font-bold"
-                                    style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                >
+                                <h3 className="text-[18px] font-bold" style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}>
                                     Growth Overview
                                 </h3>
-                                <p
-                                    className="text-[12px] leading-[18px]"
-                                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                >
-                                    Platform activity over the last {timeRange} days
-                                </p>
+                                <p className="text-[12px] text-[#64748B]">Platform activity over the last {timeRange} days</p>
                             </div>
-
                             <div className="flex items-center gap-2">
                                 <span className="text-[12px] font-bold text-[#64748B]">Duration:</span>
                                 <div className="flex bg-slate-100 p-1 rounded-xl">
@@ -279,7 +292,6 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        {/* Shadcn/Recharts Area Chart */}
                         <div className="h-[180px] w-full">
                             {isChartLoading ? (
                                 <div className="w-full h-full flex items-center justify-center bg-slate-50/50 rounded-xl animate-pulse">
@@ -299,50 +311,36 @@ export default function AdminDashboard() {
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#E2E8F0" />
-                                        <XAxis
-                                            dataKey="name"
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fontSize: 10, fill: '#64748B' }}
-                                            dy={10}
-                                        />
-                                        <YAxis
-                                            axisLine={false}
-                                            tickLine={false}
-                                            tick={{ fontSize: 10, fill: '#64748B' }}
-                                        />
-                                        <ChartTooltip
-                                            content={
-                                                <ChartTooltipContent
-                                                    indicator="dot"
-                                                />
-                                            }
-                                        />
-                                        <Area
-                                            type="monotone"
-                                            dataKey="users"
-                                            stroke="#8c00ff"
-                                            strokeWidth={2}
-                                            fillOpacity={1}
-                                            fill="url(#colorUsers)"
-                                            animationDuration={1500}
-                                        />
-                                        <Area
-                                            type="monotone"
-                                            dataKey="videos"
-                                            stroke="#3b82f6"
-                                            strokeWidth={2}
-                                            fillOpacity={1}
-                                            fill="url(#colorVideos)"
-                                            animationDuration={1500}
-                                        />
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} dy={10} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} />
+                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <Area type="monotone" dataKey="users" stroke="#8c00ff" strokeWidth={2} fillOpacity={1} fill="url(#colorUsers)" />
+                                        <Area type="monotone" dataKey="videos" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorVideos)" />
                                     </AreaChart>
                                 </ChartContainer>
                             )}
                         </div>
                     </div>
 
-                    {/* Recent Activity - Now on NEXT ROW */}
+                    {/* Advanced Analytics Section */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="lg:col-span-2">
+                            <EngagementChart isDarkMode={isDarkMode} />
+                        </div>
+                        <div className="lg:col-span-1">
+                            <DurationDonutChart
+                                isDarkMode={isDarkMode}
+                                data={durationData}
+                                isLoading={isDurationLoading}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="w-full">
+                        <StorageTrendChart isDarkMode={isDarkMode} />
+                    </div>
+
+                    {/* Recent Activity */}
                     <div
                         className="w-full rounded-2xl p-6 shadow-sm flex flex-col"
                         style={{
@@ -350,14 +348,10 @@ export default function AdminDashboard() {
                             border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
                         }}
                     >
-                        <h3
-                            className="text-[18px] leading-[26px] font-semibold mb-6"
-                            style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                        >
+                        <h3 className="text-[18px] leading-[26px] font-semibold mb-6" style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}>
                             Recent Activity
                         </h3>
-
-                        <div className="space-y-6 flex-1 overflow-y-auto pr-1">
+                        <div className="space-y-6 flex-1 pr-1">
                             {isActivityLoading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <div key={i} className="flex gap-3 animate-pulse">
@@ -369,13 +363,13 @@ export default function AdminDashboard() {
                                     </div>
                                 ))
                             ) : activity.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-center opacity-50 space-y-2">
+                                <div className="h-full flex flex-col items-center justify-center text-center opacity-50 space-y-2 py-8">
                                     <Activity size={32} />
                                     <p className="text-[13px]">No recent activity found.</p>
                                 </div>
                             ) : (
                                 activity.map((item) => (
-                                    <div key={item.id} className="flex gap-4 group cursor-pointer">
+                                    <div key={item.id} className="flex gap-4 group cursor-pointer pb-4 border-b border-slate-50 last:border-0 last:pb-0">
                                         <div
                                             className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all group-hover:scale-110"
                                             style={{
@@ -387,20 +381,12 @@ export default function AdminDashboard() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between mb-0.5">
-                                                <p
-                                                    className="text-[13px] leading-[20px] font-semibold"
-                                                    style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                                >
+                                                <p className="text-[13px] leading-[20px] font-semibold" style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}>
                                                     {item.text}
                                                 </p>
-                                                <span className="text-[11px] text-[#94A3B8]">
-                                                    {formatTime(item.time)}
-                                                </span>
+                                                <span className="text-[11px] text-[#94A3B8]">{formatTime(item.time)}</span>
                                             </div>
-                                            <p
-                                                className="text-[12px] leading-[18px] truncate"
-                                                style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                                            >
+                                            <p className="text-[12px] leading-[18px] truncate" style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}>
                                                 {item.detail}
                                             </p>
                                         </div>
@@ -409,56 +395,34 @@ export default function AdminDashboard() {
                             )}
                         </div>
                     </div>
-                </div>
 
-                {/* Quick Actions */}
-                <div
-                    className="rounded-2xl p-8 shadow-sm"
-                    style={{
-                        backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                        border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                        background: 'linear-gradient(to bottom right, #ffffff, #fcfaff)',
-                    }}
-                >
-                    <h3
-                        className="text-[20px] leading-[28px] font-bold mb-6 flex items-center gap-2"
-                        style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
+                    {/* Quick Actions */}
+                    <div
+                        className="rounded-2xl p-8 shadow-sm"
+                        style={{
+                            backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
+                            border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
+                            background: isDarkMode ? 'transparent' : 'linear-gradient(to bottom right, #ffffff, #fcfaff)',
+                        }}
                     >
-                        <TrendingUp size={22} className="text-[#8c00ff]" />
-                        Operational Actions
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <button
-                            className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all hover:-translate-y-1 active:scale-[0.98] shadow-sm hover:shadow-xl border border-transparent hover:border-[#8c00ff]/20"
-                            style={{
-                                background: 'rgba(140, 0, 255, 0.03)',
-                                color: '#8c00ff',
-                            }}
-                        >
-                            <UserPlus size={28} strokeWidth={1.5} />
-                            <span className="text-[15px] font-bold">New Admin Account</span>
-                        </button>
-
-                        <button
-                            className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all hover:-translate-y-1 active:scale-[0.98] bg-white border border-[#E2E8F0] shadow-sm hover:shadow-xl hover:border-[#3b82f6]/20 hover:bg-blue-50/20"
-                            style={{
-                                color: '#3b82f6',
-                            }}
-                        >
-                            <AlertCircle size={28} strokeWidth={1.5} />
-                            <span className="text-[15px] font-bold">Review Reports</span>
-                        </button>
-
-                        <button
-                            className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all hover:-translate-y-1 active:scale-[0.98] bg-white border border-[#E2E8F0] shadow-sm hover:shadow-xl hover:border-[#22c55e]/20 hover:bg-green-50/20"
-                            style={{
-                                color: '#22c55e',
-                            }}
-                        >
-                            <HardDrive size={28} strokeWidth={1.5} />
-                            <span className="text-[15px] font-bold">System Maintenance</span>
-                        </button>
+                        <h3 className="text-[20px] leading-[28px] font-bold mb-6 flex items-center gap-2" style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}>
+                            <TrendingUp size={22} className="text-[#8c00ff]" />
+                            Operational Actions
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all hover:-translate-y-1 active:scale-[0.98] shadow-sm hover:shadow-xl border border-transparent hover:border-[#8c00ff]/20" style={{ background: 'rgba(140, 0, 255, 0.03)', color: '#8c00ff' }}>
+                                <UserPlus size={28} strokeWidth={1.5} />
+                                <span className="text-[15px] font-bold">New Admin Account</span>
+                            </button>
+                            <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all hover:-translate-y-1 active:scale-[0.98] bg-white border border-[#E2E8F0] shadow-sm hover:shadow-xl hover:border-[#3b82f6]/20 hover:bg-blue-50/20" style={{ color: '#3b82f6' }}>
+                                <AlertCircle size={28} strokeWidth={1.5} />
+                                <span className="text-[15px] font-bold">Review Reports</span>
+                            </button>
+                            <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all hover:-translate-y-1 active:scale-[0.98] bg-white border border-[#E2E8F0] shadow-sm hover:shadow-xl hover:border-[#22c55e]/20 hover:bg-green-50/20" style={{ color: '#22c55e' }}>
+                                <HardDrive size={28} strokeWidth={1.5} />
+                                <span className="text-[15px] font-bold">System Maintenance</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
