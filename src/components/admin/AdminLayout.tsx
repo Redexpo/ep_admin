@@ -29,6 +29,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { authService } from '@/services/admin/authService';
 import { toast } from 'sonner';
+import CommandPalette from '@/components/admin/CommandPalette';
 
 interface AdminLayoutProps {
     children: ReactNode;
@@ -115,7 +116,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                     className="font-semibold text-[16px] leading-[24px]"
                                     style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
                                 >
-                                    VidFlow Admin
+                                    EdithPro Admin
                                 </span>
                             </div>
                         ) : (
@@ -158,6 +159,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             );
                         })}
                     </nav>
+
+
+                    {/* Logout Button */}
+                    <div className="absolute bottom-20 left-0 right-0 px-4">
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await authService.logout();
+                                    toast.success("Logged out successfully");
+                                } catch (error) {
+                                    toast.error("Logout failed");
+                                }
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group hover:bg-red-50 dark:hover:bg-red-500/10 text-red-500"
+                        >
+                            <LogOut size={20} strokeWidth={1.5} />
+                            {sidebarOpen && (
+                                <span className="text-[14px] leading-[22px] font-medium">Logout</span>
+                            )}
+                        </button>
+                    </div>
 
                     {/* Toggle Button */}
                     <div className="absolute bottom-4 left-0 right-0 px-4">
@@ -327,7 +349,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                         }}
                                     >
                                         {user?.picture ? (
-                                            <img src={user.picture} alt="" className="w-full h-full object-cover" />
+                                            <img src={user?.picture || ''} alt="" className="w-full h-full object-cover" />
                                         ) : (
                                             <span className="text-white text-[12px] leading-[18px] font-semibold">
                                                 {user?.first_name ? user.first_name[0].toUpperCase() : 'A'}
@@ -339,7 +361,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                         className="text-[14px] leading-[22px] font-medium"
                                         style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
                                     >
-                                        {user ? `${user.first_name} ${user.last_name || ''}`.trim() || user.email.split('@')[0] : 'Admin User'}
+                                        {user ? `${user?.first_name} ${user?.last_name || ''}`.trim() || user?.email.split('@')[0] : 'Admin User'}
                                     </span>
                                     <ChevronDown
                                         size={16}
@@ -424,17 +446,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     </main>
                 </div>
 
+                {/* Command Palette */}
+                <CommandPalette />
+
                 {/* Click outside to close dropdowns */}
-                {(showProfileMenu || showNotifications) && (
-                    <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => {
-                            setShowProfileMenu(false);
-                            setShowNotifications(false);
-                        }}
-                    />
-                )}
-            </div>
-        </AuthGuard>
+                {
+                    (showProfileMenu || showNotifications) && (
+                        <div
+                            className="fixed inset-0 z-10"
+                            onClick={() => {
+                                setShowProfileMenu(false);
+                                setShowNotifications(false);
+                            }}
+                        />
+                    )
+                }
+            </div >
+        </AuthGuard >
     );
 }

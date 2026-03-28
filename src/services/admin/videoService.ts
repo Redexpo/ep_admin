@@ -42,5 +42,9 @@ export const videoService = {
     getVideoStats: async (): Promise<{ data: VideoStats }> => {
         const response = await api.get("/api/v1/admin/videos/stats");
         return response.data;
+    },
+    getVideoById: async (id: string): Promise<{ data: Video }> => {
+        const response = await api.get(`/api/v1/admin/videos/${id}`);
+        return response.data;
     }
 };

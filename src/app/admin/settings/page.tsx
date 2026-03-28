@@ -58,7 +58,7 @@ export default function AdminSettingsPage() {
                             </label>
                             <input
                                 type="text"
-                                defaultValue="VidFlow"
+                                defaultValue="EdithPro"
                                 className="w-full px-4 py-3 rounded-xl outline-none text-[14px] leading-[22px] transition-all focus:border-[#8c00ff]"
                                 style={{
                                     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
@@ -77,7 +77,7 @@ export default function AdminSettingsPage() {
                             </label>
                             <input
                                 type="email"
-                                defaultValue="support@vidflow.com"
+                                defaultValue="support@edithpro.com"
                                 className="w-full px-4 py-3 rounded-xl outline-none text-[14px] leading-[22px] transition-all focus:border-[#8c00ff]"
                                 style={{
                                     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
@@ -225,7 +225,7 @@ export default function AdminSettingsPage() {
                             </label>
                             <input
                                 type="text"
-                                defaultValue="https://cdn.vidflow.com"
+                                defaultValue="https://cdn.edithpro.com"
                                 className="w-full px-4 py-3 rounded-xl outline-none text-[14px] leading-[22px] transition-all focus:border-[#f59e0b]"
                                 style={{
                                     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
@@ -307,7 +307,7 @@ export default function AdminSettingsPage() {
                             </label>
                             <input
                                 type="text"
-                                defaultValue="noreply@vidflow.com"
+                                defaultValue="noreply@edithpro.app"
                                 className="w-full px-4 py-3 rounded-xl outline-none text-[14px] leading-[22px] transition-all focus:border-[#22c55e]"
                                 style={{
                                     backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',

@@ -11,6 +11,7 @@ export interface User {
     created_at: string;
     auth_provider: string;
     picture?: string;
+    recordings_count?: number;
 }
 
 export interface UserListResponse {
@@ -18,6 +19,36 @@ export interface UserListResponse {
     message: string;
     data: {
         results: User[];
+        pagination: {
+            total: number;
+            page: number;
+            per_page: number;
+            total_pages: number;
+        };
+    };
+}
+
+export interface UserDetail extends User {
+    stats: {
+        total_recordings: number;
+    };
+}
+
+export interface Recording {
+    id: string;
+    title: string | null;
+    duration: number;
+    status: string;
+    thumbnail_url: string | null;
+    created_at: string;
+    file_size: number;
+}
+
+export interface RecordingListResponse {
+    status: string;
+    message: string;
+    data: {
+        results: Recording[];
         pagination: {
             total: number;
             page: number;
@@ -41,6 +72,14 @@ export const userService = {
     },
     getUserStats: async (): Promise<{ data: UserStats }> => {
         const response = await api.get("/api/v1/admin/users/stats");
+        return response.data;
+    },
+    getUserById: async (id: string): Promise<{ data: UserDetail }> => {
+        const response = await api.get(`/api/v1/admin/users/${id}`);
+        return response.data;
+    },
+    getUserRecordings: async (id: string, page: number = 1, perPage: number = 10): Promise<RecordingListResponse> => {
+        const response = await api.get(`/api/v1/admin/users/${id}/recordings?page=${page}&per_page=${perPage}`);
         return response.data;
     }
 };

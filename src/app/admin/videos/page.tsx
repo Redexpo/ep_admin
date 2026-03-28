@@ -140,20 +140,13 @@ export default function AdminVideosPage() {
                             ].map((stat, index) => (
                                 <div
                                     key={index}
-                                    className="min-w-[260px] flex-shrink-0 lg:min-w-0 rounded-2xl p-6 shadow-sm"
+                                    className="min-w-[260px] flex-shrink-0 lg:min-w-0 rounded-2xl p-4 shadow-sm border border-[#E2E8F0]"
                                     style={{
                                         backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                                        border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
                                     }}
                                 >
-                                    <div
-                                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                                        style={{ backgroundColor: `${stat.color}15` }}
-                                    >
-                                        <stat.icon size={24} strokeWidth={1.5} style={{ color: stat.color }} />
-                                    </div>
                                     <p
-                                        className="text-[12px] leading-[18px] font-medium mb-2"
+                                        className="text-[16px] leading-[24px] font-bold mb-1"
                                         style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
                                     >
                                         {stat.label}

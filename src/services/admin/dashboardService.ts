@@ -21,19 +21,35 @@ export interface RecentActivity {
     time: string;
 }
 
-export interface DashboardDataResponse {
+export interface GrowthDataResponse {
     status: string;
     message: string;
-    data: {
-        stats: DashboardStats;
-        growth_data: GrowthData;
-        activity: RecentActivity[];
-    };
+    data: GrowthData;
+}
+
+export interface ActivityResponse {
+    status: string;
+    message: string;
+    data: RecentActivity[];
+}
+
+export interface StatsResponse {
+    status: string;
+    message: string;
+    data: DashboardStats;
 }
 
 export const dashboardService = {
-    getDashboardStats: async (): Promise<DashboardDataResponse> => {
-        const response = await api.get<DashboardDataResponse>('/api/v1/admin/dashboard/stats');
+    getDashboardSummary: async (): Promise<StatsResponse> => {
+        const response = await api.get<StatsResponse>('/api/v1/admin/dashboard/stats');
+        return response.data;
+    },
+    getGrowthData: async (days: number = 7): Promise<GrowthDataResponse> => {
+        const response = await api.get<GrowthDataResponse>(`/api/v1/admin/dashboard/growth?days=${days}`);
+        return response.data;
+    },
+    getRecentActivity: async (limit: number = 10): Promise<ActivityResponse> => {
+        const response = await api.get<ActivityResponse>(`/api/v1/admin/dashboard/activity?limit=${limit}`);
         return response.data;
     }
 };

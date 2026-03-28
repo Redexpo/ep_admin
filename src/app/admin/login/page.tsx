@@ -65,7 +65,7 @@ export default function AdminLoginPage() {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="admin@vidflow.com"
+                                    placeholder="admin@edithpro.app"
                                     className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-[#8c00ff] focus:ring-4 focus:ring-purple-50 transition-all text-[14px]"
                                     required
                                 />

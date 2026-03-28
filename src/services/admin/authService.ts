@@ -35,7 +35,7 @@ class AuthService {
 
     async logout() {
         try {
-            await api.post("/api/v1/auth/logout");
+            await api.post("/api/v1/admin/auth/logout");
         } catch (error) {
             console.error("AuthService logout error:", error);
         } finally {

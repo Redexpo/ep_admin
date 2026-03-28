@@ -8,8 +8,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "VidFlow Admin",
-  description: "VidFlow Administrator Portal",
+  title: "EdithPro Admin",
+  description: "EdithPro Administrator Portal",
 };
 
 export default function RootLayout({

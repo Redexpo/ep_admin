@@ -25,12 +25,14 @@ import {
     ChartConfig
 } from '@/components/ui/chart';
 import {
-    BarChart,
-    Bar,
+    AreaChart,
+    Area,
     XAxis,
     YAxis,
     CartesianGrid,
-    ResponsiveContainer
+    ResponsiveContainer,
+    Tooltip,
+    Legend
 } from 'recharts';
 import { toast } from 'sonner';
 
@@ -47,30 +49,58 @@ const chartConfig = {
 
 export default function AdminDashboard() {
     const [isDarkMode] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isStatsLoading, setIsStatsLoading] = useState(true);
+    const [isChartLoading, setIsChartLoading] = useState(true);
+    const [isActivityLoading, setIsActivityLoading] = useState(true);
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [activity, setActivity] = useState<RecentActivity[]>([]);
     const [growthData, setGrowthData] = useState<GrowthData | null>(null);
+    const [timeRange, setTimeRange] = useState(7); // Default 7 days
 
-    const fetchDashboardData = useCallback(async () => {
+    const fetchSummaryAndActivity = useCallback(async () => {
         try {
-            setIsLoading(true);
-            const response = await dashboardService.getDashboardStats();
-            if (response.status === 'success') {
-                setStats(response.data.stats);
-                setActivity(response.data.activity);
-                setGrowthData(response.data.growth_data);
+            setIsStatsLoading(true);
+            setIsActivityLoading(true);
+            const [statsRes, activityRes] = await Promise.all([
+                dashboardService.getDashboardSummary(),
+                dashboardService.getRecentActivity(5)
+            ]);
+
+            if (statsRes.status === 'success') {
+                setStats(statsRes.data);
+            }
+            if (activityRes.status === 'success') {
+                setActivity(activityRes.data);
             }
         } catch (error: any) {
-            toast.error(error.message || "Failed to fetch dashboard data");
+            toast.error("Failed to fetch dashboard summary");
         } finally {
-            setIsLoading(false);
+            setIsStatsLoading(false);
+            setIsActivityLoading(false);
         }
     }, []);
 
+    const fetchGrowthData = useCallback(async () => {
+        try {
+            setIsChartLoading(true);
+            const response = await dashboardService.getGrowthData(timeRange);
+            if (response.status === 'success') {
+                setGrowthData(response.data);
+            }
+        } catch (error: any) {
+            toast.error("Failed to update growth chart");
+        } finally {
+            setIsChartLoading(false);
+        }
+    }, [timeRange]);
+
     useEffect(() => {
-        fetchDashboardData();
-    }, [fetchDashboardData]);
+        fetchSummaryAndActivity();
+    }, [fetchSummaryAndActivity]);
+
+    useEffect(() => {
+        fetchGrowthData();
+    }, [fetchGrowthData]);
 
     const statsCards = stats ? [
         {
@@ -153,14 +183,13 @@ export default function AdminDashboard() {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {isLoading ? (
+                    {isStatsLoading ? (
                         Array.from({ length: 4 }).map((_, i) => (
                             <div
                                 key={i}
-                                className="rounded-2xl p-6 shadow-sm animate-pulse bg-white border border-[#E2E8F0]"
+                                className="rounded-2xl p-4 shadow-sm animate-pulse bg-white border border-[#E2E8F0]"
                             >
-                                <div className="w-12 h-12 rounded-xl bg-slate-100 mb-4" />
-                                <div className="h-4 w-24 bg-slate-100 rounded mb-2" />
+                                <div className="h-5 w-24 bg-slate-100 rounded mb-2" />
                                 <div className="h-8 w-32 bg-slate-100 rounded mb-1" />
                             </div>
                         ))
@@ -168,54 +197,36 @@ export default function AdminDashboard() {
                         statsCards.map((stat, index) => (
                             <div
                                 key={index}
-                                className="rounded-2xl p-6 shadow-sm transition-all hover:shadow-md"
+                                className="rounded-2xl p-4 shadow-sm transition-all hover:shadow-md border border-[#E2E8F0]"
                                 style={{
                                     backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
                                 }}
                             >
-                                <div className="flex items-start justify-between mb-4">
-                                    <div
-                                        className="w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
-                                        style={{ backgroundColor: stat.bgColor }}
-                                    >
-                                        <stat.icon size={24} strokeWidth={1.5} style={{ color: stat.color }} />
-                                    </div>
-                                    <button
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-slate-50"
-                                    >
-                                        <MoreVertical
-                                            size={16}
-                                            strokeWidth={1.5}
-                                            style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                        />
-                                    </button>
-                                </div>
-                                <div className="space-y-1">
+                                <div className="flex items-center mb-2">
                                     <p
-                                        className="text-[12px] leading-[18px] font-medium"
+                                        className="text-[16px] leading-[24px] font-bold"
                                         style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
                                     >
                                         {stat.label}
                                     </p>
-                                    <h3
-                                        className="text-[28px] leading-[36px] font-semibold"
-                                        style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                    >
-                                        {stat.value}
-                                    </h3>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className={stat.trend === 'up' ? "text-[#22c55e] flex items-center" : "text-[#ef4444] flex items-center"}>
-                                            {stat.trend === 'up' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
-                                            <span className="text-[12px] leading-[18px] font-bold ml-0.5">{stat.change}</span>
-                                        </div>
-                                        <span
-                                            className="text-[12px] leading-[18px]"
-                                            style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                                        >
-                                            vs last week
-                                        </span>
+                                </div>
+                                <h3
+                                    className="text-[28px] leading-[36px] font-semibold mb-1"
+                                    style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
+                                >
+                                    {stat.value}
+                                </h3>
+                                <div className="flex items-center gap-1.5">
+                                    <div className={stat.trend === 'up' ? "text-[#22c55e] flex items-center" : "text-[#ef4444] flex items-center"}>
+                                        {stat.trend === 'up' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+                                        <span className="text-[12px] leading-[18px] font-bold ml-0.5">{stat.change}</span>
                                     </div>
+                                    <span
+                                        className="text-[12px] leading-[18px]"
+                                        style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
+                                    >
+                                        vs last week
+                                    </span>
                                 </div>
                             </div>
                         ))
@@ -223,10 +234,11 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Charts and Activity */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* User Growth Chart */}
+                {/* Chart & Recent Activity Row (Now stacked) */}
+                <div className="space-y-6">
+                    {/* User Growth Chart - Now FULL WIDTH */}
                     <div
-                        className="lg:col-span-2 rounded-2xl p-6 shadow-sm flex flex-col"
+                        className="w-full rounded-2xl p-6 shadow-sm flex flex-col"
                         style={{
                             backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
                             border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
@@ -235,7 +247,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between mb-8">
                             <div>
                                 <h3
-                                    className="text-[18px] leading-[26px] font-semibold mb-1"
+                                    className="text-[18px] font-bold"
                                     style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
                                 >
                                     Growth Overview
@@ -244,57 +256,95 @@ export default function AdminDashboard() {
                                     className="text-[12px] leading-[18px]"
                                     style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
                                 >
-                                    Platform activity over the last 7 days
+                                    Platform activity over the last {timeRange} days
                                 </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <span className="text-[12px] font-bold text-[#64748B]">Duration:</span>
+                                <div className="flex bg-slate-100 p-1 rounded-xl">
+                                    {[7, 30, 90].map((days) => (
+                                        <button
+                                            key={days}
+                                            onClick={() => setTimeRange(days)}
+                                            className={`px-3 py-1.5 rounded-lg text-[12px] font-black transition-all ${timeRange === days
+                                                ? 'bg-white text-[#0F172A] shadow-sm'
+                                                : 'text-[#64748B] hover:text-[#0F172A]'
+                                                }`}
+                                        >
+                                            {days}D
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Shadcn/Recharts BarChart */}
-                        <div className="flex-1 h-[300px]">
-                            {isLoading ? (
+                        {/* Shadcn/Recharts Area Chart */}
+                        <div className="h-[180px] w-full">
+                            {isChartLoading ? (
                                 <div className="w-full h-full flex items-center justify-center bg-slate-50/50 rounded-xl animate-pulse">
                                     <Activity className="text-slate-200" size={48} />
                                 </div>
                             ) : (
-                                <ChartContainer config={chartConfig} className="h-full w-full">
-                                    <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                                <ChartContainer config={chartConfig} className="aspect-auto h-full w-full">
+                                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#8c00ff" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#8c00ff" stopOpacity={0} />
+                                            </linearGradient>
+                                            <linearGradient id="colorVideos" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
                                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#E2E8F0" />
                                         <XAxis
                                             dataKey="name"
                                             axisLine={false}
                                             tickLine={false}
-                                            tick={{ fontSize: 12, fill: '#64748B' }}
+                                            tick={{ fontSize: 10, fill: '#64748B' }}
                                             dy={10}
                                         />
                                         <YAxis
                                             axisLine={false}
                                             tickLine={false}
-                                            tick={{ fontSize: 12, fill: '#64748B' }}
+                                            tick={{ fontSize: 10, fill: '#64748B' }}
                                         />
-                                        <ChartTooltip content={<ChartTooltipContent />} />
-                                        <Bar
+                                        <ChartTooltip
+                                            content={
+                                                <ChartTooltipContent
+                                                    indicator="dot"
+                                                />
+                                            }
+                                        />
+                                        <Area
+                                            type="monotone"
                                             dataKey="users"
-                                            fill="var(--color-users)"
-                                            radius={[4, 4, 0, 0]}
-                                            barSize={32}
+                                            stroke="#8c00ff"
+                                            strokeWidth={2}
+                                            fillOpacity={1}
+                                            fill="url(#colorUsers)"
                                             animationDuration={1500}
                                         />
-                                        <Bar
+                                        <Area
+                                            type="monotone"
                                             dataKey="videos"
-                                            fill="var(--color-videos)"
-                                            radius={[4, 4, 0, 0]}
-                                            barSize={32}
+                                            stroke="#3b82f6"
+                                            strokeWidth={2}
+                                            fillOpacity={1}
+                                            fill="url(#colorVideos)"
                                             animationDuration={1500}
                                         />
-                                    </BarChart>
+                                    </AreaChart>
                                 </ChartContainer>
                             )}
                         </div>
                     </div>
 
-                    {/* Recent Activity */}
+                    {/* Recent Activity - Now on NEXT ROW */}
                     <div
-                        className="rounded-2xl p-6 shadow-sm flex flex-col"
+                        className="w-full rounded-2xl p-6 shadow-sm flex flex-col"
                         style={{
                             backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
                             border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
@@ -308,7 +358,7 @@ export default function AdminDashboard() {
                         </h3>
 
                         <div className="space-y-6 flex-1 overflow-y-auto pr-1">
-                            {isLoading ? (
+                            {isActivityLoading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <div key={i} className="flex gap-3 animate-pulse">
                                         <div className="w-8 h-8 rounded-lg bg-slate-100 flex-shrink-0" />

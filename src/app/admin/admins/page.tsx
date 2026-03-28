@@ -12,7 +12,7 @@ export default function AdminAdminsPage() {
         {
             id: 1,
             name: 'Admin User',
-            email: 'admin@vidflow.com',
+            email: 'admin@edithpro.app',
             role: 'Super Admin',
             createdAt: 'Jan 1, 2026',
             lastActive: '2 hours ago',
@@ -21,7 +21,7 @@ export default function AdminAdminsPage() {
         {
             id: 2,
             name: 'Jane Smith',
-            email: 'jane.smith@vidflow.com',
+            email: 'jane.smith@edithpro.app',
             role: 'Moderator',
             createdAt: 'Feb 10, 2026',
             lastActive: '5 hours ago',
@@ -30,7 +30,7 @@ export default function AdminAdminsPage() {
         {
             id: 3,
             name: 'Tom Johnson',
-            email: 'tom.j@vidflow.com',
+            email: 'tom.j@edithpro.app',
             role: 'Support',
             createdAt: 'Mar 1, 2026',
             lastActive: '1 day ago',
@@ -94,33 +94,23 @@ export default function AdminAdminsPage() {
                     ].map((stat, index) => (
                         <div
                             key={index}
-                            className="rounded-2xl p-6 shadow-sm border border-[#E2E8F0]"
+                            className="rounded-2xl p-4 shadow-sm border border-[#E2E8F0]"
                             style={{
                                 backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
                             }}
                         >
-                            <div className="flex items-center gap-4">
-                                <div
-                                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                                    style={{ backgroundColor: `${stat.color}15` }}
-                                >
-                                    <stat.icon size={24} strokeWidth={1.5} style={{ color: stat.color }} />
-                                </div>
-                                <div>
-                                    <p
-                                        className="text-[12px] leading-[18px] font-medium mb-1"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
-                                        {stat.label}
-                                    </p>
-                                    <h3
-                                        className="text-[24px] leading-[32px] font-semibold"
-                                        style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                    >
-                                        {stat.value}
-                                    </h3>
-                                </div>
-                            </div>
+                            <p
+                                className="text-[16px] leading-[24px] font-bold mb-1"
+                                style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
+                            >
+                                {stat.label}
+                            </p>
+                            <h3
+                                className="text-[28px] leading-[36px] font-semibold"
+                                style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
+                            >
+                                {stat.value}
+                            </h3>
                         </div>
                     ))}
                 </div>
