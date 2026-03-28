@@ -95,7 +95,11 @@ export function ChartTooltipContent({
     hideLabel = false,
     labelKey,
     labelFormatter,
-}: React.ComponentProps<typeof RechartsPrimitive.Tooltip> & {
+}: {
+    active?: boolean
+    payload?: any[]
+    label?: any
+    className?: string
     indicator?: "line" | "dot" | "dashed"
     hideLabel?: boolean
     labelKey?: string
