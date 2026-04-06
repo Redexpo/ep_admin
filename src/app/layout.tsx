@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import NextTopLoader from 'nextjs-toploader';
 import "./globals.css";
 
 const outfit = Outfit({
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} font-sans antialiased bg-[#F7F8FC]`}>
+        <NextTopLoader color="#8c00ff" showSpinner={false} height={3} />
         {children}
       </body>
     </html>

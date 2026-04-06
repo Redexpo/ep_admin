@@ -18,6 +18,7 @@ import {
     PlayCircle,
     AlertCircle,
 } from 'lucide-react';
+import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { videoService, Video, VideoStats } from '@/services/admin/videoService';
 import { toast } from 'sonner';
@@ -344,12 +345,13 @@ export default function AdminVideosPage() {
                                                             </div>
                                                         )}
                                                         <div className="max-w-xs">
-                                                            <div
-                                                                className="text-[14px] leading-[22px] font-medium truncate"
+                                                            <Link
+                                                                href={`/admin/videos/${video.id}`}
+                                                                className="text-[14px] leading-[22px] font-medium truncate hover:text-[#8c00ff] transition-colors cursor-pointer"
                                                                 style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
                                                             >
                                                                 {video.title}
-                                                            </div>
+                                                            </Link>
                                                             <div
                                                                 className="text-[12px] leading-[18px]"
                                                                 style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
@@ -415,7 +417,8 @@ export default function AdminVideosPage() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <button
+                                                        <Link
+                                                            href={`/admin/videos/${video.id}`}
                                                             className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-gray-100 dark:hover:bg-white/10"
                                                             style={{
                                                                 backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
@@ -426,7 +429,7 @@ export default function AdminVideosPage() {
                                                                 strokeWidth={1.5}
                                                                 style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
                                                             />
-                                                        </button>
+                                                        </Link>
                                                         <button
                                                             className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-gray-100 dark:hover:bg-white/10"
                                                             style={{

@@ -59,7 +59,7 @@ export default function AdminDashboard() {
     const [activity, setActivity] = useState<RecentActivity[]>([]);
     const [growthData, setGrowthData] = useState<GrowthData | null>(null);
     const [durationData, setDurationData] = useState<DurationStats[]>([]);
-    const [timeRange, setTimeRange] = useState(7); // Default 7 days
+    const [timeRange, setTimeRange] = useState(30); // Default 30 days
     const [isDurationLoading, setIsDurationLoading] = useState(true);
 
     const fetchSummaryAndActivity = useCallback(async () => {

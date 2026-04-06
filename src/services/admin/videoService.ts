@@ -4,13 +4,21 @@ export interface Video {
     id: string;
     encrypted_id: string;
     title: string;
+    description?: string;
     duration: number;
     status: string;
     views: number;
     created_at: string;
     creator: string;
     creator_email: string;
+    creator_id?: string;
     thumbnail?: string;
+    tags?: string[];
+    file_size: number;
+    transcription?: string;
+    chapters?: any[];
+    reports?: any[];
+    media_info?: any;
 }
 
 export interface VideoListResponse {
@@ -45,6 +53,14 @@ export const videoService = {
     },
     getVideoById: async (id: string): Promise<{ data: Video }> => {
         const response = await api.get(`/api/v1/admin/videos/${id}`);
+        return response.data;
+    },
+    deleteVideo: async (id: string): Promise<{ status: string; message: string }> => {
+        const response = await api.delete(`/api/v1/admin/videos/${id}`);
+        return response.data;
+    },
+    updateReportStatus: async (reportId: string, status: string): Promise<{ status: string; message: string }> => {
+        const response = await api.patch(`/api/v1/admin/videos/reports/${reportId}?status=${status}`);
         return response.data;
     }
 };
