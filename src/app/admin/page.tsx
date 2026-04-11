@@ -336,9 +336,9 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    <div className="w-full">
+                    {/* <div className="w-full">
                         <StorageTrendChart isDarkMode={isDarkMode} />
-                    </div>
+                    </div> */}
 
                     {/* Recent Activity */}
                     <div

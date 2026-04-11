@@ -70,6 +70,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { name: 'Storage', path: '/admin/storage', icon: HardDrive },
         { name: 'Plans', path: '/admin/plans', icon: CreditCard },
         { name: 'Admins', path: '/admin/admins', icon: Shield },
+        { name: 'IP Addresses', path: '/admin/ips', icon: FileText },
         { name: 'Logs', path: '/admin/logs', icon: FileText },
         { name: 'Settings', path: '/admin/settings', icon: Settings },
     ];

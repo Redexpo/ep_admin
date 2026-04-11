@@ -24,11 +24,13 @@ import {
     Settings,
     Activity,
     Monitor,
-    Wifi
+    Wifi,
+    ExternalLink
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { videoService, Video as VideoType } from '@/services/admin/videoService';
 import { toast } from 'sonner';
+import { DASHBOARD_APP_URL } from '@/lib/constants';
 
 export default function VideoDetailPage() {
     const params = useParams();
@@ -169,6 +171,15 @@ export default function VideoDetailPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <a
+                            href={`${DASHBOARD_APP_URL}/v/${video.encrypted_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white border border-[#E2E8F0] text-[#0F172A] text-[14px] font-bold hover:bg-slate-50 transition-all active:scale-95"
+                        >
+                            <ExternalLink size={18} />
+                            View Video
+                        </a>
                         <button
                             disabled={isDeleting}
                             onClick={handleDelete}
