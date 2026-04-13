@@ -96,29 +96,28 @@ export default function AdminIPsPage() {
                             <thead>
                                 <tr className="bg-slate-50/50">
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">IP Address</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">User</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Source</th>
+                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Most Recent User</th>
+                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider text-center">Visits</th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Location</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Device</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Date</th>
+                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Last Activity</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[#F1F5F9]">
                                 {isLoading ? (
                                     Array(5).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan={6} className="px-6 py-6 h-[72px] bg-slate-50/10" />
+                                            <td colSpan={5} className="px-6 py-6 h-[72px] bg-slate-50/10" />
                                         </tr>
                                     ))
                                 ) : ips.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                                        <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                                             No IP address records found.
                                         </td>
                                     </tr>
                                 ) : ips.map((ip) => {
-                                    const createdDate = new Date(ip.created_at);
-                                    const formattedDate = createdDate.toLocaleString('en-US', {
+                                    const lastActivityDate = new Date(ip.updated_at || ip.created_at);
+                                    const formattedDate = lastActivityDate.toLocaleString('en-US', {
                                         month: 'short',
                                         day: 'numeric',
                                         year: 'numeric',
@@ -149,9 +148,9 @@ export default function AdminIPsPage() {
                                                     <span className="text-[13px] text-slate-400 italic">Guest</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <span className="inline-flex px-2 py-1 rounded bg-slate-100 text-[#64748B] text-[11px] font-bold uppercase tracking-wider">
-                                                    {ip.source.replace('_', ' ')}
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="inline-flex px-2.5 py-1 rounded-full bg-slate-100 text-[#64748B] text-[12px] font-bold">
+                                                    {ip.visit_count || (ip.logs ? ip.logs.length : 0) || 1}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
@@ -162,12 +161,6 @@ export default function AdminIPsPage() {
                                                     ) : (
                                                         <span className="text-slate-400">Unknown</span>
                                                     )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-1.5 text-[13px] text-slate-600">
-                                                    <Monitor size={14} className="text-slate-400" />
-                                                    <span className="capitalize">{ip.device_type?.toLowerCase() || 'unknown'}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">

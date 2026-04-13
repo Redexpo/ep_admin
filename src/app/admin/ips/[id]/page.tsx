@@ -163,120 +163,75 @@ export default function IPDetailPage() {
                         {/* Main Content Info */}
                         <div className="lg:col-span-2 space-y-8">
                             {/* Geolocation Section */}
-                            <div className="bg-white rounded-[32px] border border-[#E2E8F0] p-8 shadow-sm">
-                                <div className="flex items-center justify-between mb-8">
+                            {/* Activity Logs History */}
+                            <div className="bg-white rounded-[32px] border border-[#E2E8F0] overflow-hidden shadow-sm">
+                                <div className="p-8 border-b border-[#F1F5F9] flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                                            <MapPin size={20} />
+                                        <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-[#8c00ff]">
+                                            <Clock size={20} />
                                         </div>
-                                        <h2 className="text-[20px] font-bold text-slate-900">Geolocation Data</h2>
+                                        <h2 className="text-[20px] font-bold text-slate-900">Activity History</h2>
                                     </div>
-                                    {ip.geodata && Object.keys(ip.geodata).length > 0 && (
-                                        <button
-                                            onClick={handleSync}
-                                            disabled={isSyncing}
-                                            className="text-[#8c00ff] hover:opacity-80 transition-opacity"
-                                        >
-                                            <RefreshCw size={18} className={isSyncing ? 'animate-spin' : ''} />
-                                        </button>
-                                    )}
+                                    <span className="px-3 py-1 rounded-full bg-slate-100 text-[#64748B] text-[12px] font-bold">
+                                        {ip.logs?.length || 0} Events
+                                    </span>
                                 </div>
 
-                                {ip.geodata && Object.keys(ip.geodata).length > 0 ? (
-                                    <>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8">
-                                            <DataPoint label="Country" value={ip.geodata?.country || 'Unknown'} icon={<Globe size={16} />} />
-                                            <DataPoint label="City" value={ip.geodata?.city || 'Unknown'} icon={<MapPin size={16} />} />
-                                            <DataPoint label="Region" value={ip.geodata?.region || 'Unknown'} icon={<Navigation size={16} />} />
-                                            <DataPoint label="Timezone" value={ip.geodata?.timezone || 'Unknown'} icon={<Clock size={16} />} />
-                                            <DataPoint label="Latitude" value={ip.geodata?.latitude?.toString() || 'Unknown'} />
-                                            <DataPoint label="Longitude" value={ip.geodata?.longitude?.toString() || 'Unknown'} />
-                                            <DataPoint label="ISP" value={ip.geodata?.isp || 'Unknown'} />
-                                            <DataPoint label="ASN" value={ip.geodata?.asn || 'Unknown'} />
-                                        </div>
-
-                                        {ip.geodata?.latitude && ip.geodata?.longitude && (
-                                            <div className="mt-10 pt-10 border-t border-slate-100">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wider">Map Preview</span>
-                                                    <a
-                                                        href={`https://www.google.com/maps?q=${ip.geodata.latitude},${ip.geodata.longitude}`}
-                                                        target="_blank"
-                                                        className="text-[12px] font-bold text-[#8c00ff] flex items-center gap-1 hover:underline"
-                                                    >
-                                                        Open Google Maps <ExternalLink size={12} />
-                                                    </a>
-                                                </div>
-                                                <div className="w-full h-48 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center overflow-hidden relative group">
-                                                    <div className="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=${ip.geodata.latitude},${ip.geodata.longitude}&zoom=10&size=600x300&key=')] bg-cover bg-center opacity-40 blur-[2px] text-xs transition-opacity duration-300 group-hover:blur-0" />
-                                                    <div className="relative z-10 flex flex-col items-center gap-3">
-                                                        <div className="w-12 h-12 rounded-full bg-white shadow-xl flex items-center justify-center text-red-500 animate-bounce">
-                                                            <MapPin size={24} fill="currentColor" fillOpacity={0.2} />
-                                                        </div>
-                                                        <span className="text-[13px] font-bold text-slate-800 bg-white/90 backdrop-blur px-3 py-1 rounded-full shadow-sm">
-                                                            {ip.geodata.latitude}, {ip.geodata.longitude}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-slate-100 rounded-[24px] bg-slate-50/50">
-                                        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-slate-300 mb-6 shadow-sm">
-                                            <Globe size={32} />
-                                        </div>
-                                        <h3 className="text-[16px] font-bold text-slate-900 mb-2">No Geodata Available</h3>
-                                        <p className="text-[14px] text-slate-500 text-center max-w-[280px] mb-8">
-                                            Geolocation data for this IP address has not been fetched yet.
-                                        </p>
-                                        <button
-                                            onClick={handleSync}
-                                            disabled={isSyncing}
-                                            className="flex items-center gap-2 px-8 py-3 rounded-xl bg-[#8c00ff] text-white text-[14px] font-bold shadow-lg shadow-purple-100 hover:bg-[#7c00e0] transition-all active:scale-95 disabled:opacity-50"
-                                        >
-                                            {isSyncing ? (
-                                                <RefreshCw size={18} className="animate-spin" />
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-slate-50/50">
+                                                <th className="px-6 py-4 text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Time</th>
+                                                <th className="px-6 py-4 text-[11px] font-bold text-[#64748B] uppercase tracking-wider">User</th>
+                                                <th className="px-6 py-4 text-[11px] font-bold text-[#64748B] uppercase tracking-wider text-center">Action</th>
+                                                <th className="px-6 py-4 text-[11px] font-bold text-[#64748B] uppercase tracking-wider text-center">Device</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-[#F1F5F9]">
+                                            {ip.logs && ip.logs.length > 0 ? (
+                                                [...ip.logs].reverse().map((log, i) => (
+                                                    <tr key={i} className="hover:bg-slate-50/30 transition-colors">
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <span className="text-[13px] font-medium text-slate-600">
+                                                                {new Date(log.created_at).toLocaleString('en-US', {
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit'
+                                                                })}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            {log.user_info ? (
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[13px] font-bold text-slate-900">{log.user_info.name}</span>
+                                                                    <span className="text-[11px] text-slate-400 font-medium">{log.user_info.email}</span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-[12px] text-slate-400 italic">Guest</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <span className="inline-flex px-2 py-0.5 rounded bg-slate-100 text-[#64748B] text-[10px] font-black uppercase tracking-widest">
+                                                                {log.source.replace('_', ' ')}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <span className="text-[12px] text-slate-500 font-bold capitalize">
+                                                                {log.device_type?.toLowerCase() || 'unknown'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
                                             ) : (
-                                                <Download size={18} />
+                                                <tr>
+                                                    <td colSpan={4} className="px-6 py-8 text-center text-slate-400 text-[13px]">
+                                                        No detailed logs found for this IP.
+                                                    </td>
+                                                </tr>
                                             )}
-                                            {isSyncing ? 'Fetching...' : 'Fetch Geolocation Now'}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Request Details */}
-                            <div className="bg-white rounded-[32px] border border-[#E2E8F0] p-8 shadow-sm">
-                                <div className="flex items-center gap-3 mb-8">
-                                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
-                                        <Info size={20} />
-                                    </div>
-                                    <h2 className="text-[20px] font-bold text-slate-900">Request Analytics</h2>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-8 gap-x-12">
-                                    <DataPoint
-                                        label="Source Action"
-                                        value={ip.source.replace('_', ' ')}
-                                        badge="cyan"
-                                        icon={<Shield size={16} />}
-                                    />
-                                    <DataPoint
-                                        label="Device Type"
-                                        value={ip.device_type || 'Unknown'}
-                                        icon={<Monitor size={16} />}
-                                    />
-                                    <DataPoint
-                                        label="Is Geo Fetched"
-                                        value={ip.is_geo_data_fetched ? 'Yes' : 'No'}
-                                        icon={<Database size={16} />}
-                                    />
-                                    <DataPoint
-                                        label="Data ID"
-                                        value={ip._id}
-                                        icon={<Code size={16} />}
-                                    />
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>

@@ -1,10 +1,21 @@
 import api from '../api';
 
+export interface IPLog {
+    user_id?: string;
+    source: string;
+    device_type: string;
+    created_at: string;
+    user_info?: {
+        name: string;
+        email: string;
+    } | null;
+}
+
 export interface IPInfo {
     _id: string;
     ip: string;
     user_id?: string;
-    source: string;
+    source?: string;
     device_type?: string;
     geodata?: {
         city?: string;
@@ -17,6 +28,8 @@ export interface IPInfo {
         name: string;
         email: string;
     } | null;
+    logs?: IPLog[];
+    visit_count?: number;
     created_at: string;
     updated_at: string;
     is_geo_data_fetched: boolean;
