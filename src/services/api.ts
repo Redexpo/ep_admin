@@ -38,11 +38,13 @@ api.interceptors.response.use(
             Cookies.remove("auth_token", { path: '/', domain: COOKIE_DOMAIN });
             Cookies.remove("token_type", { path: '/', domain: COOKIE_DOMAIN });
 
+            // Also try without domain (for localhost / subdomain mismatches)
             Cookies.remove("auth_token", { path: '/' });
             Cookies.remove("token_type", { path: '/' });
 
-            // In a real app, we would redirect to login
-            // but for now, we'll just log the error
+            if (typeof window !== "undefined") {
+                window.location.href = '/auth/sign-in';
+            }
         }
 
         const message = error.response?.data?.message || error.response?.data?.detail || error.message || "An unexpected error occurred";

@@ -163,6 +163,8 @@ export default function IPDetailPage() {
                         {/* Main Content Info */}
                         <div className="lg:col-span-2 space-y-8">
                             {/* Geolocation Section */}
+                            <GeoDataSection ip={ip} isSyncing={isSyncing} handleSync={handleSync} />
+
                             {/* Activity Logs History */}
                             <div className="bg-white rounded-[32px] border border-[#E2E8F0] overflow-hidden shadow-sm">
                                 <div className="p-8 border-b border-[#F1F5F9] flex items-center justify-between">
@@ -311,6 +313,118 @@ function DataPoint({ label, value, icon, badge }: { label: string; value: string
             <span className={`text-[15px] font-bold text-slate-700 truncate ${badge ? 'inline-block px-2.5 py-0.5 rounded-lg bg-cyan-50 text-cyan-700 w-fit' : ''}`}>
                 {value}
             </span>
+        </div>
+    );
+}
+
+function GeoDataSection({ ip, isSyncing, handleSync }: { ip: IPInfo; isSyncing: boolean; handleSync: () => void }) {
+    const [showJson, setShowJson] = useState(false);
+    const hasGeodata = ip.geodata && Object.keys(ip.geodata).length > 0;
+
+    const tiles = hasGeodata ? [
+        { label: 'Country', value: ip.geodata?.country || '—', icon: '🌍' },
+        { label: 'City', value: ip.geodata?.city || '—', icon: '🏙️' },
+        { label: 'Region', value: ip.geodata?.region || '—', icon: '📍' },
+        { label: 'Timezone', value: ip.geodata?.timezone || '—', icon: '🕐' },
+        { label: 'Latitude', value: ip.geodata?.latitude?.toString() || '—', icon: '↕️' },
+        { label: 'Longitude', value: ip.geodata?.longitude?.toString() || '—', icon: '↔️' },
+        { label: 'ISP', value: ip.geodata?.isp || '—', icon: '🌐' },
+        { label: 'ASN', value: ip.geodata?.asn || '—', icon: '🔌' },
+    ] : [];
+
+    return (
+        <div className="bg-white rounded-[32px] border border-[#E2E8F0] overflow-hidden shadow-sm">
+            {/* Header */}
+            <div className="px-8 py-5 border-b border-[#F1F5F9] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                        <Globe size={20} />
+                    </div>
+                    <h2 className="text-[20px] font-bold text-slate-900">Geolocation</h2>
+                    {hasGeodata && (
+                        <span className="px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-[11px] font-bold uppercase tracking-wider">
+                            Synced
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center gap-2">
+                    {hasGeodata && (
+                        <button
+                            onClick={() => setShowJson(!showJson)}
+                            title={showJson ? 'Show tiles' : 'Show raw JSON'}
+                            className={`px-3 py-1.5 rounded-lg text-[12px] font-black font-mono transition-all border ${showJson
+                                ? 'bg-slate-900 text-white border-slate-900'
+                                : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
+                                }`}
+                        >
+                            {'{ }'}
+                        </button>
+                    )}
+                    <button
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        title="Refresh geodata"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all disabled:opacity-50"
+                    >
+                        <RefreshCw size={14} className={`text-slate-500 ${isSyncing ? 'animate-spin' : ''}`} />
+                    </button>
+                </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-8">
+                {!hasGeodata ? (
+                    <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
+                        <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center text-slate-300 mb-4 shadow-sm">
+                            <Globe size={28} />
+                        </div>
+                        <p className="text-[14px] font-bold text-slate-600 mb-1">No Geodata Available</p>
+                        <p className="text-[12px] text-slate-400 mb-6">Geolocation for this IP has not been fetched yet.</p>
+                        <button
+                            onClick={handleSync}
+                            disabled={isSyncing}
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#8c00ff] text-white text-[13px] font-bold shadow-lg shadow-purple-100 hover:bg-[#7c00e0] transition-all disabled:opacity-50"
+                        >
+                            <Download size={16} />
+                            {isSyncing ? 'Fetching...' : 'Fetch Geolocation'}
+                        </button>
+                    </div>
+                ) : showJson ? (
+                    <pre className="bg-slate-950 text-slate-300 font-mono text-[12px] leading-relaxed rounded-2xl p-6 overflow-x-auto">
+                        {JSON.stringify(ip.geodata, null, 2)}
+                    </pre>
+                ) : (
+                    <>
+                        {/* Tile Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {tiles.map((tile) => (
+                                <div key={tile.label} className="flex flex-col gap-1.5 bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                        <span>{tile.icon}</span>
+                                        {tile.label}
+                                    </span>
+                                    <span className="text-[13px] font-bold text-slate-800 truncate" title={tile.value}>
+                                        {tile.value}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Google Maps Link */}
+                        {ip.geodata?.latitude && ip.geodata?.longitude && (
+                            <a
+                                href={`https://www.google.com/maps?q=${ip.geodata.latitude},${ip.geodata.longitude}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-[#8c00ff] hover:underline"
+                            >
+                                <ExternalLink size={12} />
+                                View on Google Maps
+                            </a>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }
