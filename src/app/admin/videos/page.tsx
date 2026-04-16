@@ -258,12 +258,6 @@ export default function AdminVideosPage() {
                                         className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
                                         style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
                                     >
-                                        Duration
-                                    </th>
-                                    <th
-                                        className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
                                         Visibility
                                     </th>
                                     <th
@@ -318,6 +312,11 @@ export default function AdminVideosPage() {
                                             day: 'numeric'
                                         }) : 'N/A';
 
+                                        const formattedTime = video.created_at ? new Date(video.created_at).toLocaleTimeString('en-US', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        }) : '';
+
                                         return (
                                             <tr
                                                 key={video.id}
@@ -329,19 +328,27 @@ export default function AdminVideosPage() {
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         {video.thumbnail ? (
-                                                            <img
-                                                                src={video.thumbnail}
-                                                                alt={video.title}
-                                                                className="w-16 h-10 rounded-lg object-cover shadow-sm bg-slate-100"
-                                                            />
+                                                            <div className="relative w-16 h-10 flex-shrink-0">
+                                                                <img
+                                                                    src={video.thumbnail}
+                                                                    alt={video.title}
+                                                                    className="w-16 h-10 rounded-lg object-cover shadow-sm bg-slate-100"
+                                                                />
+                                                                <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] font-mono font-bold px-1 py-0.5 rounded leading-none">
+                                                                    {formatDuration(video.duration)}
+                                                                </span>
+                                                            </div>
                                                         ) : (
                                                             <div
-                                                                className="w-16 h-10 rounded-lg flex items-center justify-center relative overflow-hidden shadow-inner"
+                                                                className="relative w-16 h-10 flex-shrink-0 rounded-lg flex items-center justify-center overflow-hidden shadow-inner"
                                                                 style={{
                                                                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                                                 }}
                                                             >
                                                                 <Play size={16} strokeWidth={1.5} color="#ffffff" />
+                                                                <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] font-mono font-bold px-1 py-0.5 rounded leading-none">
+                                                                    {formatDuration(video.duration)}
+                                                                </span>
                                                             </div>
                                                         )}
                                                         <div className="max-w-xs">
@@ -379,14 +386,6 @@ export default function AdminVideosPage() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span
-                                                        className="text-[14px] leading-[22px] font-mono"
-                                                        style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                                    >
-                                                        {formatDuration(video.duration)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span
                                                         className="text-[14px] leading-[22px]"
                                                         style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
                                                     >
@@ -408,12 +407,20 @@ export default function AdminVideosPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span
-                                                        className="text-[14px] leading-[22px]"
-                                                        style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                                                    >
-                                                        {formattedDate}
-                                                    </span>
+                                                    <div>
+                                                        <div
+                                                            className="text-[14px] leading-[22px]"
+                                                            style={{ color: isDarkMode ? '#94A3B8' : '#475569' }}
+                                                        >
+                                                            {formattedDate}
+                                                        </div>
+                                                        <div
+                                                            className="text-[12px] leading-[18px]"
+                                                            style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
+                                                        >
+                                                            {formattedTime}
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center justify-end gap-2">
