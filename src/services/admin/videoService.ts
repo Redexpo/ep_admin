@@ -1,5 +1,13 @@
 import api from "../api";
 
+export interface ViewRecord {
+    user_name?: string;
+    user_email?: string;
+    ip_address?: string;
+    device_type?: string;
+    created_at?: string;
+}
+
 export interface Video {
     id: string;
     encrypted_id: string;
@@ -8,6 +16,7 @@ export interface Video {
     duration: number;
     status: string;
     views: number;
+    views_list?: ViewRecord[];
     created_at: string;
     creator: string;
     creator_email: string;

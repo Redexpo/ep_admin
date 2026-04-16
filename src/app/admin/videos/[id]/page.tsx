@@ -28,7 +28,7 @@ import {
     ExternalLink
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { videoService, Video as VideoType } from '@/services/admin/videoService';
+import { videoService, Video as VideoType, ViewRecord } from '@/services/admin/videoService';
 import { toast } from 'sonner';
 import { DASHBOARD_APP_URL } from '@/lib/constants';
 
@@ -39,7 +39,7 @@ export default function VideoDetailPage() {
 
     const [video, setVideo] = useState<VideoType | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'transcription' | 'reports' | 'tech'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'transcription' | 'reports' | 'views' | 'tech'>('overview');
     const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchVideoData = useCallback(async () => {
@@ -200,6 +200,7 @@ export default function VideoDetailPage() {
                         { id: 'overview', label: 'Overview', icon: Info },
                         { id: 'transcription', label: 'Transcription', icon: FileText },
                         { id: 'reports', label: `Reports (${video.reports?.length || 0})`, icon: AlertTriangle, color: video.reports?.length ? 'text-red-500' : '' },
+                        { id: 'views', label: `Views (${video.views_list?.length || video.views || 0})`, icon: Eye },
                         { id: 'tech', label: 'Technical Info', icon: Activity },
                     ].map((tab) => (
                         <button
@@ -351,6 +352,89 @@ export default function VideoDetailPage() {
                                     <div className="flex flex-col items-center justify-center py-20 bg-green-50 rounded-[32px] border border-dashed border-green-200">
                                         <Shield size={48} className="text-green-200 mb-4" />
                                         <p className="font-bold text-green-400">No reports found for this video. Safe!</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'views' && (
+                            <div className="bg-white rounded-[40px] border border-[#E2E8F0] overflow-hidden shadow-sm animate-in fade-in zoom-in-95 duration-300">
+                                <div className="px-8 py-5 border-b border-[#F1F5F9] flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                                            <Eye size={20} />
+                                        </div>
+                                        <h2 className="text-[20px] font-black text-[#0F172A]">View History</h2>
+                                    </div>
+                                    <span className="px-3 py-1 rounded-full bg-slate-100 text-[#64748B] text-[12px] font-bold">
+                                        {video.views_list?.length || 0} Records
+                                    </span>
+                                </div>
+
+                                {video.views_list && video.views_list.length > 0 ? (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="bg-slate-50/60 border-b border-[#F1F5F9]">
+                                                    <th className="px-6 py-4 text-[11px] font-black text-[#64748B] uppercase tracking-wider">#</th>
+                                                    <th className="px-6 py-4 text-[11px] font-black text-[#64748B] uppercase tracking-wider">Viewer</th>
+                                                    <th className="px-6 py-4 text-[11px] font-black text-[#64748B] uppercase tracking-wider text-center">Device</th>
+                                                    <th className="px-6 py-4 text-[11px] font-black text-[#64748B] uppercase tracking-wider">IP Address</th>
+                                                    <th className="px-6 py-4 text-[11px] font-black text-[#64748B] uppercase tracking-wider">Viewed At</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#F8FAFC]">
+                                                {video.views_list.map((view: ViewRecord, i: number) => (
+                                                    <tr key={i} className="hover:bg-slate-50/40 transition-colors">
+                                                        <td className="px-6 py-4 text-[13px] font-bold text-slate-300">{i + 1}</td>
+                                                        <td className="px-6 py-4">
+                                                            {view.user_name ? (
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[14px] font-bold text-[#0F172A]">{view.user_name}</span>
+                                                                    {view.user_email && (
+                                                                        <span className="text-[12px] text-slate-400 font-medium">{view.user_email}</span>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-[13px] text-slate-400 italic">Anonymous</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider ${view.device_type === 'MOBILE'
+                                                                    ? 'bg-blue-50 text-blue-600'
+                                                                    : view.device_type === 'DESKTOP'
+                                                                        ? 'bg-purple-50 text-purple-600'
+                                                                        : 'bg-slate-100 text-slate-500'
+                                                                }`}>
+                                                                {view.device_type?.toLowerCase() || 'unknown'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className="font-mono text-[13px] text-slate-500">
+                                                                {view.ip_address || '—'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            {view.created_at ? (
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[13px] font-medium text-slate-700">
+                                                                        {new Date(view.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                    </span>
+                                                                    <span className="text-[11px] text-slate-400 font-medium">
+                                                                        {new Date(view.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                                    </span>
+                                                                </div>
+                                                            ) : '—'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50">
+                                        <Eye size={48} className="text-slate-200 mb-4" />
+                                        <p className="font-bold text-slate-400">No views recorded for this video yet.</p>
                                     </div>
                                 )}
                             </div>
