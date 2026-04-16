@@ -306,13 +306,13 @@ export default function AdminVideosPage() {
                                     </tr>
                                 ) : (
                                     videos.map((video) => {
-                                        const formattedDate = video.created_at ? new Date(video.created_at).toLocaleDateString('en-US', {
+                                        const formattedDate = video.created_at ? new Date(video.created_at + 'Z').toLocaleDateString('en-US', {
                                             year: 'numeric',
                                             month: 'short',
                                             day: 'numeric'
                                         }) : 'N/A';
 
-                                        const formattedTime = video.created_at ? new Date(video.created_at).toLocaleTimeString('en-US', {
+                                        const formattedTime = video.created_at ? new Date(video.created_at + 'Z').toLocaleTimeString('en-US', {
                                             hour: '2-digit',
                                             minute: '2-digit',
                                         }) : '';

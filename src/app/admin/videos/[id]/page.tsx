@@ -401,18 +401,29 @@ export default function VideoDetailPage() {
                                                         </td>
                                                         <td className="px-6 py-4 text-center">
                                                             <span className={`inline-flex px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider ${view.device_type === 'MOBILE'
-                                                                    ? 'bg-blue-50 text-blue-600'
-                                                                    : view.device_type === 'DESKTOP'
-                                                                        ? 'bg-purple-50 text-purple-600'
-                                                                        : 'bg-slate-100 text-slate-500'
+                                                                ? 'bg-blue-50 text-blue-600'
+                                                                : view.device_type === 'DESKTOP'
+                                                                    ? 'bg-purple-50 text-purple-600'
+                                                                    : 'bg-slate-100 text-slate-500'
                                                                 }`}>
                                                                 {view.device_type?.toLowerCase() || 'unknown'}
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <span className="font-mono text-[13px] text-slate-500">
-                                                                {view.ip_address || '—'}
-                                                            </span>
+                                                            {view.ip_doc_id ? (
+                                                                <a
+                                                                    href={`/admin/ips/${view.ip_doc_id}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="font-mono text-[13px] text-[#8c00ff] hover:underline"
+                                                                >
+                                                                    {view.ip_address || '—'}
+                                                                </a>
+                                                            ) : (
+                                                                <span className="font-mono text-[13px] text-slate-500">
+                                                                    {view.ip_address || '—'}
+                                                                </span>
+                                                            )}
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             {view.created_at ? (

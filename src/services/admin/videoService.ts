@@ -4,6 +4,7 @@ export interface ViewRecord {
     user_name?: string;
     user_email?: string;
     ip_address?: string;
+    ip_doc_id?: string;
     device_type?: string;
     created_at?: string;
 }
