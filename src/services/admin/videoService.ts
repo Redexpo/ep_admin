@@ -25,6 +25,11 @@ export interface Video {
     thumbnail?: string;
     tags?: string[];
     file_size: number;
+    folder?: {
+        id: string;
+        encrypted_id?: string;
+        name: string;
+    } | null;
     transcription?: string;
     chapters?: any[];
     reports?: any[];

@@ -365,6 +365,22 @@ export default function AdminVideosPage() {
                                                             >
                                                                 {video.encrypted_id}
                                                             </div>
+                                                            {video.folder?.name && (
+                                                                <div className="flex items-center gap-1 mt-1">
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                                                                        style={{
+                                                                            backgroundColor: isDarkMode ? 'rgba(251,191,36,0.12)' : '#fef9ee',
+                                                                            color: isDarkMode ? '#fbbf24' : '#b45309',
+                                                                            border: `1px solid ${isDarkMode ? 'rgba(251,191,36,0.2)' : '#fde68a'}`,
+                                                                        }}
+                                                                    >
+                                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                                                                            <path d="M10 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2h-8l-2-2z" />
+                                                                        </svg>
+                                                                        {video.folder.name}
+                                                                    </span>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </td>
