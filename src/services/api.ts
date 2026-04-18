@@ -43,7 +43,7 @@ api.interceptors.response.use(
             Cookies.remove("token_type", { path: '/' });
 
             if (typeof window !== "undefined") {
-                window.location.href = '/auth/sign-in';
+                window.location.href = '/admin/login';
             }
         }
 

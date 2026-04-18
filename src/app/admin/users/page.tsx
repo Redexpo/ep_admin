@@ -203,8 +203,8 @@ export default function AdminUsersPage() {
                                         day: 'numeric',
                                         year: 'numeric'
                                     });
-                                    const status = user.is_active ? 'active' : 'inactive';
-                                    const plan = 'Free'; // Placeholder
+                                    const status = user.subscription_status || (user.is_active ? 'active' : 'inactive');
+                                    const plan = user.plan_name || 'Starter';
 
                                     return (
                                         <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
@@ -235,7 +235,9 @@ export default function AdminUsersPage() {
                                                 </Link>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className="inline-flex px-2.5 py-1 rounded-lg text-[12px] font-bold bg-slate-100 text-[#0F172A]">
+                                                <span className={`inline-flex px-2.5 py-1 rounded-lg text-[12px] font-bold ${plan === 'Enterprise' ? 'bg-purple-100 text-purple-700' :
+                                                        plan === 'Pro' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-[#0F172A]'
+                                                    }`}>
                                                     {plan}
                                                 </span>
                                             </td>
@@ -251,7 +253,9 @@ export default function AdminUsersPage() {
                                                 <span className="text-[13px] text-[#64748B]">{formattedDate}</span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`inline-flex px-2 py-1 rounded-md text-[11px] font-bold uppercase ${user.is_active ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                                <span className={`inline-flex px-2 py-1 rounded-md text-[11px] font-bold uppercase ${status === 'active' || status === 'free' ? 'bg-green-50 text-green-600' :
+                                                        status === 'past_due' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
+                                                    }`}>
                                                     {status}
                                                 </span>
                                             </td>

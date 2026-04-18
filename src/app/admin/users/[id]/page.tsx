@@ -239,6 +239,18 @@ export default function UserDetailPage() {
                                     )}
                                 </div>
                             </div>
+                            <div className="w-[1px] h-8 bg-slate-100 hidden md:block" />
+                            <div className="flex flex-col">
+                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Subscription</span>
+                                <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-lg text-[13px] font-bold ${user.plan_name === 'Enterprise' ? 'bg-purple-100 text-purple-700' :
+                                            user.plan_name === 'Pro' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-[#0F172A]'
+                                        }`}>
+                                        {user.plan_name || 'Starter'}
+                                    </span>
+                                    <span className="text-[11px] font-black text-[#64748B] uppercase">({user.billing_cycle || 'none'})</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

@@ -12,6 +12,8 @@ export interface User {
     auth_provider: string;
     picture?: string;
     recordings_count?: number;
+    plan_name?: string;
+    subscription_status?: string;
 }
 
 export interface UserListResponse {
@@ -32,6 +34,9 @@ export interface UserDetail extends User {
     stats: {
         total_recordings: number;
     };
+    plan_name?: string;
+    subscription_status?: string;
+    billing_cycle?: string;
 }
 
 export interface Recording {

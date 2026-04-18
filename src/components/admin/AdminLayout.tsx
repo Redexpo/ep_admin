@@ -24,6 +24,7 @@ import {
     User,
     Moon,
     Sun,
+    Repeat,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AuthGuard from '@/components/auth/AuthGuard';
@@ -69,6 +70,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { name: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
         { name: 'Storage', path: '/admin/storage', icon: HardDrive },
         { name: 'Plans', path: '/admin/plans', icon: CreditCard },
+        { name: 'Subscriptions', path: '/admin/subscriptions', icon: Repeat },
         { name: 'Admins', path: '/admin/admins', icon: Shield },
         { name: 'IP Addresses', path: '/admin/ips', icon: FileText },
         { name: 'Logs', path: '/admin/logs', icon: FileText },
