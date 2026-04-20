@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Plus, Edit, Trash2, Check, Lock,
+    Plus, Edit, Check, Lock,
     Eye, ToggleLeft, ToggleRight,
     ListOrdered, ShieldAlert, Search,
     ExternalLink, Copy, CheckCircle2
@@ -59,19 +59,6 @@ export default function AdminPlansPage() {
         }
     };
 
-    const handleDeletePlan = async (plan: Plan) => {
-        if (!confirm(`Are you sure you want to delete the plan "${plan.name}"? This will also delete all its features and limits.`)) {
-            return;
-        }
-
-        try {
-            await adminPlanService.deletePlan(plan.id);
-            setPlans(prev => prev.filter(p => p.id !== plan.id));
-            toast.success("Plan deleted successfully");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to delete plan");
-        }
-    };
 
     const getVisibilityBadge = (visibility: string) => {
         switch (visibility) {
@@ -154,7 +141,8 @@ export default function AdminPlansPage() {
                             <thead>
                                 <tr className="bg-slate-50/50">
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Plan Name</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Price/Model</th>
+                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Model</th>
+                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Pricing</th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Visibility</th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider text-right">Actions</th>
@@ -164,14 +152,14 @@ export default function AdminPlansPage() {
                                 {isLoading ? (
                                     Array(3).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan={5} className="px-6 py-8">
+                                            <td colSpan={6} className="px-6 py-8">
                                                 <div className="h-6 bg-slate-100 rounded-lg w-full"></div>
                                             </td>
                                         </tr>
                                     ))
                                 ) : filteredPlans.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-20 text-center">
+                                        <td colSpan={6} className="px-6 py-20 text-center">
                                             <div className="flex flex-col items-center gap-3">
                                                 <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
                                                     <ShieldAlert size={32} />
@@ -194,9 +182,21 @@ export default function AdminPlansPage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[14px] font-bold text-[#8c00ff]">
+                                                    <span className="text-[14px] font-bold capitalize text-[#8c00ff]">
                                                         {plan.billing_model.replace(/_/g, ' ')}
                                                     </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase w-12 text-right">M</span>
+                                                        <span className="text-[14px] font-bold text-slate-700">${plan.price_monthly}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase w-12 text-right">A</span>
+                                                        <span className="text-[14px] font-bold text-emerald-600">${plan.price_annual}</span>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -252,13 +252,6 @@ export default function AdminPlansPage() {
                                                         title="Plan Limits"
                                                     >
                                                         <ShieldAlert size={16} className="text-slate-600 group-hover/btn:text-amber-600" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeletePlan(plan)}
-                                                        className="p-2 rounded-xl bg-red-50 hover:bg-red-500 hover:shadow-md border border-red-100 transition-all group/btn"
-                                                        title="Delete Plan"
-                                                    >
-                                                        <Trash2 size={16} className="text-red-500 group-hover/btn:text-white" />
                                                     </button>
                                                 </div>
                                             </td>
