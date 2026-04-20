@@ -195,9 +195,6 @@ export default function AdminPlansPage() {
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
                                                     <span className="text-[14px] font-bold text-[#8c00ff]">
-                                                        {plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`}
-                                                    </span>
-                                                    <span className="text-[12px] text-slate-500 capitalize">
                                                         {plan.billing_model.replace(/_/g, ' ')}
                                                     </span>
                                                 </div>
