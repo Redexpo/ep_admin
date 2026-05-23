@@ -5,44 +5,52 @@ import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/services/admin/authService';
 import Cookies from 'js-cookie';
 
+// Module-level cache — survives client-side navigations, resets on full page refresh
+let authCache: boolean | null = null;
+
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+    // Initialize from cache so repeated navigations never flash the loading screen
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(authCache);
 
     useEffect(() => {
-        const checkAuth = async () => {
-            // Skip check for login page
-            if (pathname === '/admin/login') {
-                setIsAuthenticated(true);
-                return;
-            }
+        // Login page needs no guard
+        if (pathname === '/admin/login') return;
 
-            const token = Cookies.get('auth_token');
-            if (!token) {
-                setIsAuthenticated(false);
-                router.push('/admin/login');
-                return;
-            }
+        // Already verified this session — state is already true from useState(authCache)
+        if (authCache === true) return;
 
-            try {
-                const user = await authService.getCurrentUser();
+        const token = Cookies.get('auth_token');
+        if (!token) {
+            authCache = false;
+            // Keep showing loading until redirect completes — no synchronous setState needed
+            router.push('/admin/login');
+            return;
+        }
+
+        authService.getCurrentUser()
+            .then(user => {
                 if (!user.is_admin) {
-                    console.error("AuthGuard: User is not an admin");
+                    authCache = false;
                     setIsAuthenticated(false);
                     router.push('/admin/login');
-                    return;
+                } else {
+                    authCache = true;
+                    setIsAuthenticated(true);
                 }
-                setIsAuthenticated(true);
-            } catch (error) {
-                console.error("AuthGuard verification failed:", error);
+            })
+            .catch(() => {
+                authCache = false;
                 setIsAuthenticated(false);
                 router.push('/admin/login');
-            }
-        };
+            });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-        checkAuth();
-    }, [pathname, router]);
+    // Login page — render immediately, no guard
+    if (pathname === '/admin/login') return <>{children}</>;
 
     if (isAuthenticated === null) {
         return (
@@ -55,9 +63,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         );
     }
 
-    if (isAuthenticated === false && pathname !== '/admin/login') {
-        return null;
-    }
+    if (isAuthenticated === false) return null;
 
     return <>{children}</>;
 }

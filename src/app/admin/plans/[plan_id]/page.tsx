@@ -239,12 +239,13 @@ export default function PlanDetailPage({ params }: { params: Promise<{ plan_id: 
 
                         {limits ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="md:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="md:col-span-2 grid grid-cols-2 lg:grid-cols-5 gap-4">
                                     {[
                                         { label: 'Recordings', value: limits.max_recordings },
                                         { label: 'Length (min)', value: limits.max_recording_minutes },
-                                        { label: 'AI Credits', value: limits.max_transcription_uses },
-                                        { label: 'Chapters', value: limits.max_chapter_uses }
+                                        { label: 'Transcription', value: limits.max_transcription_uses },
+                                        { label: 'Chapters', value: limits.max_chapter_uses },
+                                        { label: 'AI Generate', value: limits.max_generate_uses }
                                     ].map((l, i) => (
                                         <div key={i} className="p-4 rounded-3xl bg-slate-900 text-white flex flex-col items-center justify-center gap-1 shadow-xl">
                                             <span className="text-[20px] font-black">{l.value === -1 ? '∞' : l.value}</span>
@@ -257,10 +258,14 @@ export default function PlanDetailPage({ params }: { params: Promise<{ plan_id: 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
                                         {[
                                             { label: 'Video Quality', value: limits.video_quality_max === 2160 ? '4K Ultra' : `${limits.video_quality_max}p` },
+                                            { label: 'Max Active Workflows', value: limits.max_active_workflows === -1 ? '∞' : String(limits.max_active_workflows) },
                                             { label: 'Custom Thumbnails', value: limits.allow_custom_thumbnail ? 'Yes' : 'No', type: 'bool' },
                                             { label: 'Direct Downloads', value: limits.allow_download ? 'Yes' : 'No', type: 'bool' },
                                             { label: 'Password Protect', value: limits.allow_password_protect ? 'Yes' : 'No', type: 'bool' },
-                                            { label: 'Strict Branding', value: limits.allow_watermark_removal ? 'Yes' : 'No', type: 'bool' },
+                                            { label: 'Remove Watermark', value: limits.allow_watermark_removal ? 'Yes' : 'No', type: 'bool' },
+                                            { label: 'Video Uploads', value: limits.allow_video_upload ? 'Yes' : 'No', type: 'bool' },
+                                            { label: 'AI Generation', value: limits.allow_generate ? 'Yes' : 'No', type: 'bool' },
+                                            { label: 'Workflow Automations', value: limits.allow_workflows ? 'Yes' : 'No', type: 'bool' },
                                             { label: 'CamelAI Support', value: limits.allow_camelai ? 'Yes' : 'No', type: 'bool' },
                                             { label: 'Developer SDK', value: limits.allow_sdk ? 'Yes' : 'No', type: 'bool' },
                                         ].map((item, i) => (

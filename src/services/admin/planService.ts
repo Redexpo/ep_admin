@@ -48,6 +48,11 @@ export interface PlanLimit {
     allow_watermark_removal: boolean;
     allow_camelai: boolean;
     allow_sdk: boolean;
+    allow_video_upload: boolean;
+    allow_generate: boolean;
+    max_generate_uses: number;
+    allow_workflows: boolean;
+    max_active_workflows: number;
     created_at: string;
     updated_at: string;
 }

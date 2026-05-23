@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, ShieldAlert, Zap, Globe, Lock, Download, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { X, ShieldAlert, Zap, Globe, Lock, Download, Image as ImageIcon, Sparkles, Video, Wand2, GitBranch } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminPlanService, PlanLimit } from '@/services/admin/planService';
 import { toast } from 'sonner';
@@ -26,7 +26,12 @@ export default function LimitsModal({ isOpen, onClose, planId }: LimitsModalProp
         allow_password_protect: false,
         allow_watermark_removal: false,
         allow_camelai: false,
-        allow_sdk: false
+        allow_sdk: false,
+        allow_video_upload: false,
+        allow_generate: false,
+        max_generate_uses: -1,
+        allow_workflows: false,
+        max_active_workflows: 3
     });
 
     useEffect(() => {
@@ -147,6 +152,8 @@ export default function LimitsModal({ isOpen, onClose, planId }: LimitsModalProp
                                 <LimitInput label="Max Recording Length" icon={Zap} field="max_recording_minutes" helper="Duration in minutes per video" />
                                 <LimitInput label="Transcription Credits" icon={Sparkles} field="max_transcription_uses" helper="AI Transcriptions allowed" />
                                 <LimitInput label="AI Chapter Credits" icon={Sparkles} field="max_chapter_uses" helper="AI Chapter generations allowed" />
+                                <LimitInput label="AI Generate Credits" icon={Wand2} field="max_generate_uses" helper="AI content generation uses allowed" />
+                                <LimitInput label="Max Active Workflows" icon={GitBranch} field="max_active_workflows" helper="Concurrent active automation workflows" />
 
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
@@ -177,6 +184,9 @@ export default function LimitsModal({ isOpen, onClose, planId }: LimitsModalProp
                                     <ToggleItem label="Remove Watermark" icon={Sparkles} field="allow_watermark_removal" />
                                     <ToggleItem label="CamelAI Access" icon={Sparkles} field="allow_camelai" />
                                     <ToggleItem label="SDK / Developer Access" icon={Zap} field="allow_sdk" />
+                                    <ToggleItem label="Video Uploads" icon={Video} field="allow_video_upload" />
+                                    <ToggleItem label="AI Content Generation" icon={Wand2} field="allow_generate" />
+                                    <ToggleItem label="Workflow Automations" icon={GitBranch} field="allow_workflows" />
                                 </div>
                             </div>
                         </div>

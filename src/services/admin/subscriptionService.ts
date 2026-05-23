@@ -11,11 +11,74 @@ export interface AdminSubscription {
     created_at: string;
 }
 
+export interface AdminSubscriptionDetail {
+    id: string;
+    user_id: string;
+    user_email: string;
+    user_name?: string;
+    plan_id?: string;
+    plan_name: string;
+    status: string;
+    subscription_type: string;
+    billing_cycle: string;
+    seats: number;
+    used_seats: number;
+    recordings_used: number;
+    transcription_uses: number;
+    chapter_uses: number;
+    generate_uses: number;
+    cap_max_recordings: number;
+    cap_max_recording_minutes: number;
+    cap_max_transcription_uses: number;
+    cap_max_chapter_uses: number;
+    cap_max_generate_uses: number;
+    video_quality_max: number;
+    allow_custom_thumbnail: boolean;
+    allow_download: boolean;
+    allow_password_protect: boolean;
+    allow_watermark_removal: boolean;
+    allow_camelai: boolean;
+    allow_sdk: boolean;
+    allow_video_upload: boolean;
+    allow_generate: boolean;
+    allow_workflows: boolean;
+    cap_max_active_workflows: number;
+    current_period_start?: string;
+    current_period_end?: string;
+    payment_gateway?: string;
+    gateway_subscription_id?: string;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface SubscriptionUpdate {
     plan_id?: string;
     status?: string;
     billing_cycle?: string;
     seats?: number;
+}
+
+export interface SubscriptionUsageOverride {
+    recordings_used?: number;
+    transcription_uses?: number;
+    chapter_uses?: number;
+    generate_uses?: number;
+    cap_max_recordings?: number;
+    cap_max_recording_minutes?: number;
+    cap_max_transcription_uses?: number;
+    cap_max_chapter_uses?: number;
+    cap_max_generate_uses?: number;
+    cap_max_active_workflows?: number;
+    video_quality_max?: number;
+    allow_custom_thumbnail?: boolean;
+    allow_download?: boolean;
+    allow_password_protect?: boolean;
+    allow_watermark_removal?: boolean;
+    allow_camelai?: boolean;
+    allow_sdk?: boolean;
+    allow_video_upload?: boolean;
+    allow_generate?: boolean;
+    allow_workflows?: boolean;
 }
 
 export interface AdminPaymentOrder {
@@ -71,13 +134,17 @@ export const adminSubscriptionService = {
         return response.data;
     },
 
-    async getSubscriptionDetail(userId: string): Promise<AdminSubscription> {
+    async getSubscriptionDetail(userId: string): Promise<AdminSubscriptionDetail> {
         const response = await api.get(`/api/v1/admin/subscriptions/${userId}`);
         return response.data;
     },
 
     async updateSubscription(userId: string, data: SubscriptionUpdate): Promise<void> {
         await api.patch(`/api/v1/admin/subscriptions/${userId}`, data);
+    },
+
+    async overrideSubscriptionUsage(userId: string, data: SubscriptionUsageOverride): Promise<void> {
+        await api.patch(`/api/v1/admin/subscriptions/${userId}/usage`, data);
     },
 
     // Payment Management

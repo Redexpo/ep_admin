@@ -1,231 +1,256 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-    Search,
-    Filter,
-    ChevronLeft,
-    ChevronRight,
-    Repeat,
-    Edit2,
-    CheckCircle2,
-    XCircle,
-    AlertCircle,
-    User,
-    CreditCard
+    Search, ChevronLeft, ChevronRight, Edit2, Eye,
+    CheckCircle2, XCircle, AlertCircle, Clock, User, Users
 } from 'lucide-react';
+import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { adminSubscriptionService, AdminSubscription } from '@/services/admin/subscriptionService';
-import SubscriptionModal from '@/components/admin/subscriptions/SubscriptionModal';
 import { toast } from 'sonner';
 
-export default function SubscriptionsPage() {
-    const [isLoading, setIsLoading] = useState(true);
-    const [subscriptions, setSubscriptions] = useState<AdminSubscription[]>([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [searchQuery, setSearchQuery] = useState('');
+const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; chip: string; filter: string }> = {
+    active:    { label: 'Active',    icon: <CheckCircle2 size={12} />, chip: 'bg-green-50  text-green-700  border-green-100',  filter: 'active'    },
+    cancelled: { label: 'Cancelled', icon: <XCircle      size={12} />, chip: 'bg-red-50    text-red-700    border-red-100',    filter: 'cancelled' },
+    past_due:  { label: 'Past Due',  icon: <AlertCircle  size={12} />, chip: 'bg-amber-50  text-amber-700  border-amber-100',  filter: 'past_due'  },
+    trialing:  { label: 'Trialing',  icon: <Clock        size={12} />, chip: 'bg-blue-50   text-blue-700   border-blue-100',   filter: 'trialing'  },
+    free:      { label: 'Free',      icon: <CheckCircle2 size={12} />, chip: 'bg-slate-100 text-slate-600  border-slate-200',  filter: 'free'      },
+};
 
-    // Modal state
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+export default function SubscriptionsPage() {
+    const [isLoading,      setIsLoading]      = useState(true);
+    const [subscriptions,  setSubscriptions]  = useState<AdminSubscription[]>([]);
+    const [currentPage,    setCurrentPage]    = useState(1);
+    const [statusFilter,   setStatusFilter]   = useState('all');
+    const [searchQuery,    setSearchQuery]    = useState('');
 
     const fetchSubscriptions = useCallback(async () => {
         try {
             setIsLoading(true);
             const data = await adminSubscriptionService.getSubscriptions(
-                currentPage,
-                20,
+                currentPage, 20,
                 statusFilter === 'all' ? undefined : statusFilter
             );
             setSubscriptions(data);
-        } catch (error: any) {
-            toast.error(error.message || "Failed to fetch subscriptions");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to fetch subscriptions');
         } finally {
             setIsLoading(false);
         }
     }, [currentPage, statusFilter]);
 
-    useEffect(() => {
-        fetchSubscriptions();
-    }, [fetchSubscriptions]);
+    useEffect(() => { fetchSubscriptions(); }, [fetchSubscriptions]);
 
-    const handleEdit = (userId: string) => {
-        setSelectedUserId(userId);
-        setIsModalOpen(true);
-    };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'active': return <CheckCircle2 size={14} className="text-green-500" />;
-            case 'past_due': return <AlertCircle size={14} className="text-amber-500" />;
-            case 'cancelled': return <XCircle size={14} className="text-red-500" />;
-            default: return <AlertCircle size={14} className="text-slate-400" />;
-        }
-    };
-
-    const filteredSubscriptions = subscriptions.filter(sub =>
-        sub.user_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sub.plan_name.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = useMemo(() =>
+        subscriptions.filter(s =>
+            s.user_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.plan_name.toLowerCase().includes(searchQuery.toLowerCase())
+        ),
+        [subscriptions, searchQuery]
     );
+
+    // Summary counts from current page data
+    const counts = useMemo(() => ({
+        active:    subscriptions.filter(s => s.status === 'active').length,
+        free:      subscriptions.filter(s => s.status === 'free').length,
+        past_due:  subscriptions.filter(s => s.status === 'past_due').length,
+        cancelled: subscriptions.filter(s => s.status === 'cancelled').length,
+    }), [subscriptions]);
+
+    const FILTER_TABS = [
+        { label: 'All',       value: 'all'       },
+        { label: 'Active',    value: 'active'    },
+        { label: 'Free',      value: 'free'      },
+        { label: 'Past Due',  value: 'past_due'  },
+        { label: 'Cancelled', value: 'cancelled' },
+    ];
 
     return (
         <AdminLayout>
-            <div className="space-y-8">
+            <div className="p-8 max-w-[1400px] mx-auto space-y-6 pb-20">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-[32px] font-bold tracking-tight text-slate-900">User Subscriptions</h1>
-                        <p className="text-[16px] text-slate-500 mt-1">
-                            Monitor and manage user subscription plans and billing status.
-                        </p>
-                    </div>
+                <div>
+                    <h1 className="text-[28px] font-black text-slate-900 tracking-tight">User Subscriptions</h1>
+                    <p className="text-[14px] text-slate-500 mt-0.5">Monitor and manage subscription plans, usage, and entitlements.</p>
+
+                    {/* Stat chips */}
+                    {!isLoading && (
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-[12px] font-bold text-green-700 border border-green-100">
+                                <CheckCircle2 size={11} /> {counts.active} active
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-[12px] font-bold text-slate-600">
+                                <Users size={11} /> {counts.free} free
+                            </span>
+                            {counts.past_due > 0 && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-[12px] font-bold text-amber-700 border border-amber-100">
+                                    <AlertCircle size={11} /> {counts.past_due} past due
+                                </span>
+                            )}
+                            {counts.cancelled > 0 && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-[12px] font-bold text-red-700 border border-red-100">
+                                    <XCircle size={11} /> {counts.cancelled} cancelled
+                                </span>
+                            )}
+                        </div>
+                    )}
                 </div>
 
-                {/* Table Section */}
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                    {/* Filters */}
-                    <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="relative flex-1 max-w-md">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                {/* Table card */}
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    {/* Toolbar */}
+                    <div className="px-6 py-4 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="relative flex-1 max-w-sm">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
                                 type="text"
                                 placeholder="Search email or plan..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                                className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#8c00ff]/30 focus:border-[#8c00ff] transition-all"
                             />
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="flex p-1 bg-slate-100 rounded-xl">
-                                {['All', 'Active', 'Cancelled', 'Past_Due'].map((f) => (
-                                    <button
-                                        key={f}
-                                        onClick={() => setStatusFilter(f.toLowerCase())}
-                                        className={`px-4 py-1.5 rounded-lg text-[13px] font-bold transition-all ${statusFilter === f.toLowerCase()
-                                                ? 'bg-white text-slate-900 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-900'
-                                            }`}
-                                    >
-                                        {f.replace('_', ' ')}
-                                    </button>
-                                ))}
-                            </div>
+                        <div className="flex p-1 bg-slate-100 rounded-xl gap-0.5 overflow-x-auto no-scrollbar">
+                            {FILTER_TABS.map(tab => (
+                                <button
+                                    key={tab.value}
+                                    onClick={() => { setStatusFilter(tab.value); setCurrentPage(1); }}
+                                    className={`px-3.5 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap transition-all ${
+                                        statusFilter === tab.value
+                                            ? 'bg-white text-slate-900 shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-800'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
                     {/* Table */}
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left">
                             <thead>
-                                <tr className="bg-slate-50/50">
-                                    <th className="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">User</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Current Plan</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Billing</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Seats</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Created</th>
-                                    <th className="px-6 py-4 text-[12px] font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                                <tr className="bg-slate-50/60 border-b border-slate-100">
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">User</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Plan</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Billing</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Seats</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Created</th>
+                                    <th className="px-6 py-3.5 text-right text-[11px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="divide-y divide-slate-50">
                                 {isLoading ? (
-                                    Array(5).fill(0).map((_, i) => (
+                                    Array(6).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan={7} className="px-6 py-8 bg-slate-50/30" />
+                                            <td colSpan={7} className="px-6 py-4">
+                                                <div className="h-5 bg-slate-100 rounded-lg w-full" />
+                                            </td>
                                         </tr>
                                     ))
-                                ) : filteredSubscriptions.length === 0 ? (
+                                ) : filtered.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-20 text-center">
-                                            <div className="flex flex-col items-center justify-center text-slate-400">
-                                                <Repeat size={48} strokeWidth={1} className="mb-4 opacity-20" />
-                                                <p className="text-[16px] font-medium">No subscriptions found</p>
+                                        <td colSpan={7} className="px-6 py-24 text-center">
+                                            <div className="flex flex-col items-center gap-3 text-slate-300">
+                                                <User size={40} strokeWidth={1} />
+                                                <p className="text-[14px] text-slate-400 font-medium">No subscriptions found</p>
                                             </div>
                                         </td>
                                     </tr>
-                                ) : filteredSubscriptions.map((sub) => (
-                                    <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors group">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                                                    <User size={16} />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-[14px] font-bold text-slate-900 line-clamp-1">{sub.user_email}</p>
-                                                    <p className="text-[11px] text-slate-400 font-mono">ID: {sub.user_id.substring(0, 8)}...</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <CreditCard size={14} className="text-purple-500" />
-                                                <span className="text-[14px] font-semibold text-slate-700">{sub.plan_name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase ${sub.status === 'active' ? 'bg-green-50 text-green-600' :
-                                                    sub.status === 'past_due' ? 'bg-amber-50 text-amber-600' :
-                                                        sub.status === 'cancelled' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'
-                                                }`}>
-                                                {getStatusIcon(sub.status)}
-                                                {sub.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-[13px] font-medium text-slate-600 capitalize">{sub.billing_cycle}</span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-[14px] font-bold text-slate-900">{sub.seats}</span>
-                                        </td>
-                                        <td className="px-6 py-4 text-[13px] text-slate-500">
-                                            {new Date(sub.created_at).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button
-                                                onClick={() => handleEdit(sub.user_id)}
-                                                className="p-2 rounded-xl bg-slate-50 hover:bg-white hover:shadow-sm border border-slate-200 transition-all text-slate-600"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                ) : (
+                                    filtered.map((sub) => {
+                                        const sc = STATUS_CONFIG[sub.status] ?? STATUS_CONFIG['free'];
+                                        return (
+                                            <tr key={sub.id} className="hover:bg-slate-50/60 transition-colors">
+                                                {/* User */}
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-[#8c00ff] shrink-0">
+                                                            <User size={15} />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-[13px] font-bold text-slate-900 truncate max-w-[200px]">{sub.user_email}</p>
+                                                            <p className="text-[10px] text-slate-400 font-mono">{sub.user_id.substring(0, 12)}…</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                {/* Plan */}
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[13px] font-bold text-slate-800">{sub.plan_name}</span>
+                                                </td>
+                                                {/* Status */}
+                                                <td className="px-6 py-4">
+                                                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${sc.chip}`}>
+                                                        {sc.icon} {sc.label}
+                                                    </span>
+                                                </td>
+                                                {/* Billing */}
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[13px] text-slate-600 capitalize font-medium">{sub.billing_cycle}</span>
+                                                </td>
+                                                {/* Seats */}
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[13px] font-bold text-slate-900">{sub.seats}</span>
+                                                </td>
+                                                {/* Created */}
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[12px] text-slate-500">{new Date(sub.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                                </td>
+                                                {/* Actions */}
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Link
+                                                            href={`/admin/subscriptions/${sub.user_id}`}
+                                                            className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-purple-50 hover:text-[#8c00ff] transition-all"
+                                                            title="View details"
+                                                        >
+                                                            <Eye size={15} />
+                                                        </Link>
+                                                        <Link
+                                                            href={`/admin/subscriptions/${sub.user_id}/edit`}
+                                                            className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all"
+                                                            title="Edit usage & entitlements"
+                                                        >
+                                                            <Edit2 size={15} />
+                                                        </Link>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                             </tbody>
                         </table>
                     </div>
 
                     {/* Pagination */}
-                    <div className="p-6 border-t border-slate-100 flex items-center justify-between">
-                        <p className="text-[13px] text-slate-500">
-                            Showing <span className="font-bold text-slate-900">{filteredSubscriptions.length}</span> subscriptions
+                    <div className="px-6 py-4 border-t border-slate-50 flex items-center justify-between">
+                        <p className="text-[12px] text-slate-500">
+                            Showing <span className="font-bold text-slate-900">{filtered.length}</span> subscriptions
                         </p>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={currentPage === 1 || isLoading}
-                                className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-50 disabled:opacity-40 transition-all"
+                                className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all"
                             >
-                                <ChevronLeft size={18} />
+                                <ChevronLeft size={16} />
                             </button>
+                            <span className="text-[13px] font-bold text-slate-700 px-2">Page {currentPage}</span>
                             <button
                                 onClick={() => setCurrentPage(p => p + 1)}
                                 disabled={subscriptions.length < 20 || isLoading}
-                                className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-50 disabled:opacity-40 transition-all"
+                                className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all"
                             >
-                                <ChevronRight size={18} />
+                                <ChevronRight size={16} />
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <SubscriptionModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSuccess={fetchSubscriptions}
-                userId={selectedUserId}
-            />
         </AdminLayout>
     );
 }

@@ -2,65 +2,40 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Users,
-    Video,
-    HardDrive,
-    TrendingUp,
-    ArrowUp,
-    ArrowDown,
-    MoreVertical,
-    UserPlus,
-    Upload,
-    Trash2,
-    UserCheck,
-    AlertCircle,
-    Activity,
+    Users, Video, AlertCircle, UserCheck,
+    ArrowUp, ArrowDown, UserPlus, Upload, Activity,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { dashboardService, DashboardStats, RecentActivity, GrowthData, DurationStats } from '@/services/admin/dashboardService';
-import { StorageTrendChart } from '@/components/admin/charts/StorageTrendChart';
 import { EngagementChart } from '@/components/admin/charts/EngagementChart';
 import { DurationDonutChart } from '@/components/admin/charts/DurationDonutChart';
-import {
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-    ChartConfig
-} from '@/components/ui/chart';
-import {
-    AreaChart,
-    Area,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    ResponsiveContainer,
-    Tooltip,
-    Legend
-} from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { toast } from 'sonner';
 
 const chartConfig = {
-    users: {
-        label: "New Users",
-        color: "#8c00ff",
-    },
-    videos: {
-        label: "New Videos",
-        color: "#3b82f6",
-    },
+    users:  { label: 'New Users',  color: '#8c00ff' },
+    videos: { label: 'New Videos', color: '#3b82f6' },
 } satisfies ChartConfig;
 
+const KPI_META = [
+    { key: 'total_users',      label: 'Total Users',      icon: Users,     color: '#8c00ff', bg: 'bg-purple-50',  text: 'text-[#8c00ff]' },
+    { key: 'active_users_24h', label: 'Active (24 h)',    icon: UserCheck, color: '#22c55e', bg: 'bg-green-50',   text: 'text-green-600' },
+    { key: 'total_videos',     label: 'Total Recordings', icon: Video,     color: '#3b82f6', bg: 'bg-blue-50',    text: 'text-blue-600'  },
+    { key: 'reported_videos',  label: 'Reported Videos',  icon: AlertCircle, color: '#ef4444', bg: 'bg-red-50', text: 'text-red-500'  },
+] as const;
+
 export default function AdminDashboard() {
-    const [isDarkMode] = useState(false);
-    const [isStatsLoading, setIsStatsLoading] = useState(true);
-    const [isChartLoading, setIsChartLoading] = useState(true);
+    const [isStatsLoading,    setIsStatsLoading]    = useState(true);
+    const [isChartLoading,    setIsChartLoading]    = useState(true);
     const [isActivityLoading, setIsActivityLoading] = useState(true);
-    const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [activity, setActivity] = useState<RecentActivity[]>([]);
-    const [growthData, setGrowthData] = useState<GrowthData | null>(null);
-    const [durationData, setDurationData] = useState<DurationStats[]>([]);
-    const [timeRange, setTimeRange] = useState(30); // Default 30 days
     const [isDurationLoading, setIsDurationLoading] = useState(true);
+
+    const [stats,        setStats]        = useState<DashboardStats | null>(null);
+    const [activity,     setActivity]     = useState<RecentActivity[]>([]);
+    const [growthData,   setGrowthData]   = useState<GrowthData | null>(null);
+    const [durationData, setDurationData] = useState<DurationStats[]>([]);
+    const [timeRange,    setTimeRange]    = useState(30);
 
     const fetchSummaryAndActivity = useCallback(async () => {
         try {
@@ -68,17 +43,12 @@ export default function AdminDashboard() {
             setIsActivityLoading(true);
             const [statsRes, activityRes] = await Promise.all([
                 dashboardService.getDashboardSummary(),
-                dashboardService.getRecentActivity(5)
+                dashboardService.getRecentActivity(5),
             ]);
-
-            if (statsRes.status === 'success') {
-                setStats(statsRes.data);
-            }
-            if (activityRes.status === 'success') {
-                setActivity(activityRes.data);
-            }
-        } catch (error: any) {
-            toast.error("Failed to fetch dashboard summary");
+            if (statsRes.status    === 'success') setStats(statsRes.data);
+            if (activityRes.status === 'success') setActivity(activityRes.data);
+        } catch {
+            toast.error('Failed to fetch dashboard summary');
         } finally {
             setIsStatsLoading(false);
             setIsActivityLoading(false);
@@ -89,340 +59,177 @@ export default function AdminDashboard() {
         try {
             setIsChartLoading(true);
             const response = await dashboardService.getGrowthData(timeRange);
-            if (response.status === 'success') {
-                setGrowthData(response.data);
-            }
-        } catch (error: any) {
-            toast.error("Failed to update growth chart");
+            if (response.status === 'success') setGrowthData(response.data);
+        } catch {
+            toast.error('Failed to update growth chart');
         } finally {
             setIsChartLoading(false);
         }
     }, [timeRange]);
 
-    useEffect(() => {
-        fetchSummaryAndActivity();
-    }, [fetchSummaryAndActivity]);
-
     const fetchDurationData = useCallback(async () => {
         try {
             setIsDurationLoading(true);
             const response = await dashboardService.getDurationStats();
-            if (response.status === 'success') {
-                setDurationData(response.data);
-            }
-        } catch (error: any) {
-            console.error("Failed to fetch duration stats", error);
+            if (response.status === 'success') setDurationData(response.data);
+        } catch {
+            // non-critical
         } finally {
             setIsDurationLoading(false);
         }
     }, []);
 
-    useEffect(() => {
-        fetchDurationData();
-    }, [fetchDurationData]);
+    useEffect(() => { fetchSummaryAndActivity(); }, [fetchSummaryAndActivity]);
+    useEffect(() => { fetchGrowthData();         }, [fetchGrowthData]);
+    useEffect(() => { fetchDurationData();        }, [fetchDurationData]);
 
-    useEffect(() => {
-        fetchGrowthData();
-    }, [fetchGrowthData]);
+    const chartData = growthData
+        ? growthData.labels.map((label, i) => ({ name: label, users: growthData.users[i], videos: growthData.videos[i] }))
+        : [];
 
-    const statsCards = stats ? [
-        {
-            label: 'Total Users',
-            value: stats.total_users.value.toLocaleString(),
-            change: stats.total_users.change,
-            trend: stats.total_users.trend,
-            icon: Users,
-            color: '#8c00ff',
-            bgColor: 'rgba(140, 0, 255, 0.1)',
-        },
-        {
-            label: 'Active Users (24h)',
-            value: stats.active_users_24h.value.toLocaleString(),
-            change: stats.active_users_24h.change,
-            trend: stats.active_users_24h.trend,
-            icon: UserCheck,
-            color: '#22c55e',
-            bgColor: 'rgba(34, 197, 94, 0.1)',
-        },
-        {
-            label: 'Total Videos',
-            value: stats.total_videos.value.toLocaleString(),
-            change: stats.total_videos.change,
-            trend: stats.total_videos.trend,
-            icon: Video,
-            color: '#3b82f6',
-            bgColor: 'rgba(59, 130, 246, 0.1)',
-        },
-        {
-            label: 'Reported Videos',
-            value: stats.reported_videos.value.toLocaleString(),
-            change: stats.reported_videos.change,
-            trend: stats.reported_videos.trend,
-            icon: AlertCircle,
-            color: '#ef4444',
-            bgColor: 'rgba(239, 68, 68, 0.1)',
-        },
-    ] : [];
-
-    // Prepare data for Recharts
-    const chartData = growthData ? growthData.labels.map((label, index) => ({
-        name: label,
-        users: growthData.users[index],
-        videos: growthData.videos[index],
-    })) : [];
-
-    const formatTime = (isoString: string) => {
-        const date = new Date(isoString);
-        const now = new Date();
-        const diffMs = now.getTime() - date.getTime();
-        const diffMins = Math.floor(diffMs / 60000);
-
-        if (diffMins < 60) return `${diffMins} mins ago`;
-        const diffHours = Math.floor(diffMins / 60);
-        if (diffHours < 24) return `${diffHours} hours ago`;
-        return date.toLocaleDateString();
+    const formatTime = (iso: string) => {
+        const diffMins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+        if (diffMins < 60)  return `${diffMins}m ago`;
+        const h = Math.floor(diffMins / 60);
+        if (h < 24)         return `${h}h ago`;
+        return new Date(iso).toLocaleDateString();
     };
 
     return (
         <AdminLayout>
-            <div className="space-y-8">
-                {/* Page Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1
-                            className="text-[32px] leading-[40px] font-semibold mb-2"
-                            style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                        >
-                            Dashboard
-                        </h1>
-                        <p
-                            className="text-[14px] leading-[22px]"
-                            style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                        >
-                            Welcome back! Here's what's happening with your platform today.
-                        </p>
-                    </div>
+            <div className="p-8 space-y-8 max-w-[1400px] mx-auto pb-20">
+                {/* Page header */}
+                <div>
+                    <h1 className="text-[28px] font-black text-slate-900 tracking-tight">Overview</h1>
+                    <p className="text-[14px] text-slate-500 mt-0.5">Platform health at a glance.</p>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {isStatsLoading ? (
-                        Array.from({ length: 4 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="rounded-2xl p-4 shadow-sm animate-pulse bg-white border border-[#E2E8F0]"
-                            >
-                                <div className="h-5 w-24 bg-slate-100 rounded mb-2" />
-                                <div className="h-8 w-32 bg-slate-100 rounded mb-1" />
-                            </div>
+                {/* KPI cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {isStatsLoading
+                        ? Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="h-[110px] rounded-3xl bg-white border border-slate-100 animate-pulse" />
                         ))
-                    ) : (
-                        statsCards.map((stat, index) => (
-                            <div
-                                key={index}
-                                className="rounded-2xl p-4 shadow-sm transition-all hover:shadow-md border border-[#E2E8F0]"
-                                style={{
-                                    backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                                }}
-                            >
-                                <div className="flex items-center mb-2">
-                                    <p
-                                        className="text-[16px] leading-[24px] font-bold"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
-                                        {stat.label}
-                                    </p>
-                                </div>
-                                <h3
-                                    className="text-[28px] leading-[36px] font-semibold mb-1"
-                                    style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                >
-                                    {stat.value}
-                                </h3>
-                                <div className="flex items-center gap-1.5">
-                                    <div className={stat.trend === 'up' ? "text-[#22c55e] flex items-center" : "text-[#ef4444] flex items-center"}>
-                                        {stat.trend === 'up' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
-                                        <span className="text-[12px] leading-[18px] font-bold ml-0.5">{stat.change}</span>
+                        : KPI_META.map(({ key, label, icon: Icon, bg, text }) => {
+                            const stat = stats?.[key as keyof DashboardStats] as { value: number; change: string; trend: string } | undefined;
+                            return (
+                                <div key={key} className="p-5 rounded-3xl bg-white border border-slate-100 shadow-sm flex flex-col gap-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{label}</span>
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${bg} ${text}`}>
+                                            <Icon size={16} />
+                                        </div>
                                     </div>
-                                    <span
-                                        className="text-[12px] leading-[18px]"
-                                        style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                                    >
-                                        vs last week
+                                    <span className="text-[28px] font-black text-slate-900 leading-none">
+                                        {stat?.value.toLocaleString() ?? '—'}
                                     </span>
+                                    {stat && (
+                                        <div className={`flex items-center gap-1 text-[12px] font-bold ${stat.trend === 'up' ? 'text-green-600' : 'text-red-500'}`}>
+                                            {stat.trend === 'up' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                                            {stat.change}
+                                            <span className="text-slate-400 font-normal">vs last week</span>
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        ))
-                    )}
+                            );
+                        })
+                    }
                 </div>
 
-                {/* Charts and Activity */}
-                <div className="space-y-8">
-                    {/* User Growth Chart - Full Width */}
-                    <div
-                        className="w-full rounded-2xl p-6 shadow-sm flex flex-col"
-                        style={{
-                            backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                            border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                        }}
-                    >
-                        <div className="flex items-center justify-between mb-8">
-                            <div>
-                                <h3 className="text-[18px] font-bold" style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}>
-                                    Growth Overview
-                                </h3>
-                                <p className="text-[12px] text-[#64748B]">Platform activity over the last {timeRange} days</p>
+                {/* Growth chart */}
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-[16px] font-black text-slate-900">Growth Overview</h3>
+                            <p className="text-[12px] text-slate-400">New users & recordings over the last {timeRange} days</p>
+                        </div>
+                        <div className="flex bg-slate-100 p-1 rounded-xl gap-0.5">
+                            {[7, 30, 90].map((d) => (
+                                <button
+                                    key={d}
+                                    onClick={() => setTimeRange(d)}
+                                    className={`px-3 py-1.5 rounded-lg text-[12px] font-black transition-all ${timeRange === d ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                >
+                                    {d}D
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="h-[260px] w-full">
+                        {isChartLoading ? (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-2xl animate-pulse">
+                                <Activity className="text-slate-200" size={40} />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[12px] font-bold text-[#64748B]">Duration:</span>
-                                <div className="flex bg-slate-100 p-1 rounded-xl">
-                                    {[7, 30, 90].map((days) => (
-                                        <button
-                                            key={days}
-                                            onClick={() => setTimeRange(days)}
-                                            className={`px-3 py-1.5 rounded-lg text-[12px] font-black transition-all ${timeRange === days
-                                                ? 'bg-white text-[#0F172A] shadow-sm'
-                                                : 'text-[#64748B] hover:text-[#0F172A]'
-                                                }`}
-                                        >
-                                            {days}D
-                                        </button>
-                                    ))}
+                        ) : (
+                            <ChartContainer config={chartConfig} className="aspect-auto h-full w-full">
+                                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="gUsers"  x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%"  stopColor="#8c00ff" stopOpacity={0.25} />
+                                            <stop offset="95%" stopColor="#8c00ff" stopOpacity={0}    />
+                                        </linearGradient>
+                                        <linearGradient id="gVideos" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.25} />
+                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}    />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#F1F5F9" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94A3B8' }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94A3B8' }} />
+                                    <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                    <Area type="monotone" dataKey="users"  stroke="#8c00ff" strokeWidth={2} fillOpacity={1} fill="url(#gUsers)"  />
+                                    <Area type="monotone" dataKey="videos" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#gVideos)" />
+                                </AreaChart>
+                            </ChartContainer>
+                        )}
+                    </div>
+                </div>
+
+                {/* Engagement + Duration */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
+                        <EngagementChart isDarkMode={false} />
+                    </div>
+                    <div className="lg:col-span-1">
+                        <DurationDonutChart isDarkMode={false} data={durationData} isLoading={isDurationLoading} />
+                    </div>
+                </div>
+
+                {/* Recent activity */}
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                    <h3 className="text-[16px] font-black text-slate-900 mb-6">Recent Activity</h3>
+                    <div className="space-y-1">
+                        {isActivityLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} className="flex gap-3 p-3 animate-pulse">
+                                    <div className="w-9 h-9 rounded-xl bg-slate-100 shrink-0" />
+                                    <div className="flex-1 space-y-2 py-1">
+                                        <div className="h-3 w-40 bg-slate-100 rounded" />
+                                        <div className="h-2.5 w-56 bg-slate-50 rounded" />
+                                    </div>
                                 </div>
+                            ))
+                        ) : activity.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16 text-slate-300 gap-2">
+                                <Activity size={36} strokeWidth={1} />
+                                <p className="text-[13px] text-slate-400">No recent activity</p>
                             </div>
-                        </div>
-
-                        <div className="h-[180px] w-full">
-                            {isChartLoading ? (
-                                <div className="w-full h-full flex items-center justify-center bg-slate-50/50 rounded-xl animate-pulse">
-                                    <Activity className="text-slate-200" size={48} />
-                                </div>
-                            ) : (
-                                <ChartContainer config={chartConfig} className="aspect-auto h-full w-full">
-                                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#8c00ff" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#8c00ff" stopOpacity={0} />
-                                            </linearGradient>
-                                            <linearGradient id="colorVideos" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#E2E8F0" />
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} />
-                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
-                                        <Area type="monotone" dataKey="users" stroke="#8c00ff" strokeWidth={2} fillOpacity={1} fill="url(#colorUsers)" />
-                                        <Area type="monotone" dataKey="videos" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorVideos)" />
-                                    </AreaChart>
-                                </ChartContainer>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Advanced Analytics Section */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2">
-                            <EngagementChart isDarkMode={isDarkMode} />
-                        </div>
-                        <div className="lg:col-span-1">
-                            <DurationDonutChart
-                                isDarkMode={isDarkMode}
-                                data={durationData}
-                                isLoading={isDurationLoading}
-                            />
-                        </div>
-                    </div>
-
-                    {/* <div className="w-full">
-                        <StorageTrendChart isDarkMode={isDarkMode} />
-                    </div> */}
-
-                    {/* Recent Activity */}
-                    <div
-                        className="w-full rounded-2xl p-6 shadow-sm flex flex-col"
-                        style={{
-                            backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                            border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                        }}
-                    >
-                        <h3 className="text-[18px] leading-[26px] font-semibold mb-6" style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}>
-                            Recent Activity
-                        </h3>
-                        <div className="space-y-6 flex-1 pr-1">
-                            {isActivityLoading ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <div key={i} className="flex gap-3 animate-pulse">
-                                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex-shrink-0" />
-                                        <div className="flex-1 space-y-2">
-                                            <div className="h-4 w-32 bg-slate-100 rounded" />
-                                            <div className="h-3 w-48 bg-slate-50 rounded" />
-                                        </div>
+                        ) : (
+                            activity.map((item) => (
+                                <div key={item.id} className="flex items-start gap-3 p-3 rounded-2xl hover:bg-slate-50 transition-colors group">
+                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${item.type === 'user' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                                        {item.type === 'user' ? <UserPlus size={16} /> : <Upload size={16} />}
                                     </div>
-                                ))
-                            ) : activity.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-center opacity-50 space-y-2 py-8">
-                                    <Activity size={32} />
-                                    <p className="text-[13px]">No recent activity found.</p>
-                                </div>
-                            ) : (
-                                activity.map((item) => (
-                                    <div key={item.id} className="flex gap-4 group cursor-pointer pb-4 border-b border-slate-50 last:border-0 last:pb-0">
-                                        <div
-                                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all group-hover:scale-110"
-                                            style={{
-                                                backgroundColor: item.type === 'user' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                                                color: item.type === 'user' ? '#22c55e' : '#3b82f6'
-                                            }}
-                                        >
-                                            {item.type === 'user' ? <UserPlus size={18} /> : <Upload size={18} />}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[13px] font-bold text-slate-900">{item.text}</p>
+                                            <span className="text-[11px] text-slate-400 shrink-0 ml-4">{formatTime(item.time)}</span>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-0.5">
-                                                <p className="text-[13px] leading-[20px] font-semibold" style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}>
-                                                    {item.text}
-                                                </p>
-                                                <span className="text-[11px] text-[#94A3B8]">{formatTime(item.time)}</span>
-                                            </div>
-                                            <p className="text-[12px] leading-[18px] truncate" style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}>
-                                                {item.detail}
-                                            </p>
-                                        </div>
+                                        <p className="text-[12px] text-slate-400 truncate mt-0.5">{item.detail}</p>
                                     </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div
-                        className="rounded-2xl p-8 shadow-sm"
-                        style={{
-                            backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                            border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                            background: isDarkMode ? 'transparent' : 'linear-gradient(to bottom right, #ffffff, #fcfaff)',
-                        }}
-                    >
-                        <h3 className="text-[20px] leading-[28px] font-bold mb-6 flex items-center gap-2" style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}>
-                            <TrendingUp size={22} className="text-[#8c00ff]" />
-                            Operational Actions
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all hover:-translate-y-1 active:scale-[0.98] shadow-sm hover:shadow-xl border border-transparent hover:border-[#8c00ff]/20" style={{ background: 'rgba(140, 0, 255, 0.03)', color: '#8c00ff' }}>
-                                <UserPlus size={28} strokeWidth={1.5} />
-                                <span className="text-[15px] font-bold">New Admin Account</span>
-                            </button>
-                            <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all hover:-translate-y-1 active:scale-[0.98] bg-white border border-[#E2E8F0] shadow-sm hover:shadow-xl hover:border-[#3b82f6]/20 hover:bg-blue-50/20" style={{ color: '#3b82f6' }}>
-                                <AlertCircle size={28} strokeWidth={1.5} />
-                                <span className="text-[15px] font-bold">Review Reports</span>
-                            </button>
-                            <button className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl transition-all hover:-translate-y-1 active:scale-[0.98] bg-white border border-[#E2E8F0] shadow-sm hover:shadow-xl hover:border-[#22c55e]/20 hover:bg-green-50/20" style={{ color: '#22c55e' }}>
-                                <HardDrive size={28} strokeWidth={1.5} />
-                                <span className="text-[15px] font-bold">System Maintenance</span>
-                            </button>
-                        </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
