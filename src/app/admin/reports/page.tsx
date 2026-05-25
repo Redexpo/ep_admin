@@ -1,391 +1,224 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Filter, Eye, Trash2, X, Ban, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { adminReportService, AdminReport, REPORT_REASONS } from '@/services/admin/reportService';
+import { toast } from 'sonner';
 
-export default function AdminReportsPage() {
-    const [isDarkMode] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [selectedFilter, setSelectedFilter] = useState('all');
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ReactElement }> = {
+    pending:   { label: 'Pending',   color: 'text-amber-700', bg: 'bg-amber-50',  icon: <Clock size={10} /> },
+    resolved:  { label: 'Resolved',  color: 'text-green-700', bg: 'bg-green-50',  icon: <CheckCircle2 size={10} /> },
+    dismissed: { label: 'Dismissed', color: 'text-slate-500', bg: 'bg-slate-100', icon: <XCircle size={10} /> },
+};
 
-    const reports = [
-        {
-            id: 'RPT-001',
-            videoId: 'VID-234',
-            videoTitle: 'Inappropriate Content Example',
-            reportedBy: 'John Doe',
-            reporterEmail: 'john.doe@example.com',
-            reason: 'Inappropriate content',
-            description: 'Contains offensive language',
-            date: 'Mar 6, 2026',
-            status: 'pending',
-        },
-        {
-            id: 'RPT-002',
-            videoId: 'VID-567',
-            videoTitle: 'Spam Video Promotion',
-            reportedBy: 'Sarah Chen',
-            reporterEmail: 'sarah.chen@company.com',
-            reason: 'Spam',
-            description: 'Promoting external services',
-            date: 'Mar 5, 2026',
-            status: 'pending',
-        },
-        {
-            id: 'RPT-003',
-            videoId: 'VID-891',
-            videoTitle: 'Copyright Violation',
-            reportedBy: 'Mike Wilson',
-            reporterEmail: 'mike.w@startup.io',
-            reason: 'Copyright violation',
-            description: 'Using copyrighted material without permission',
-            date: 'Mar 4, 2026',
-            status: 'resolved',
-        },
-        {
-            id: 'RPT-004',
-            videoId: 'VID-123',
-            videoTitle: 'Misleading Thumbnail',
-            reportedBy: 'Emily Rodriguez',
-            reporterEmail: 'emily.r@agency.com',
-            reason: 'Misleading content',
-            description: 'Clickbait thumbnail',
-            date: 'Mar 3, 2026',
-            status: 'pending',
-        },
-    ];
+const fmtDate = (d: string) =>
+    new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+type StatusFilter = 'all' | 'pending' | 'resolved' | 'dismissed';
+
+export default function ReportsPage() {
+    const [data,     setData]     = useState<AdminReport[]>([]);
+    const [loading,  setLoading]  = useState(true);
+    const [page,     setPage]     = useState(1);
+    const [status,   setStatus]   = useState<StatusFilter>('all');
+    const [reason,   setReason]   = useState('');
+    const [updating, setUpdating] = useState<string | null>(null);
+
+    const load = useCallback(async () => {
+        try {
+            setLoading(true);
+            setData(await adminReportService.getReports(
+                page,
+                status === 'all' ? undefined : status,
+                reason || undefined,
+            ));
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : 'Failed to load reports');
+        } finally {
+            setLoading(false);
+        }
+    }, [page, status, reason]);
+
+    useEffect(() => { load(); }, [load]);
+
+    const pendingCount = useMemo(() => data.filter(r => r.status === 'pending').length, [data]);
+
+    async function handleStatus(report: AdminReport, newStatus: string) {
+        if (newStatus === report.status) return;
+        setUpdating(report.id);
+        try {
+            await adminReportService.updateStatus(report.id, newStatus);
+            toast.success(`Report marked as ${newStatus}`);
+            setData(prev => prev.map(r =>
+                r.id === report.id ? { ...r, status: newStatus as AdminReport['status'] } : r,
+            ));
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : 'Failed to update report');
+        } finally {
+            setUpdating(null);
+        }
+    }
 
     return (
         <AdminLayout>
-            <div className="space-y-6">
-                {/* Page Header */}
+            <div className="p-8 max-w-[1400px] mx-auto space-y-6 pb-20">
                 <div>
-                    <h1
-                        className="text-[28px] leading-[36px] font-semibold mb-2"
-                        style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                    >
-                        Reports & Moderation
-                    </h1>
-                    <p
-                        className="text-[14px] leading-[22px]"
-                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                    >
-                        Review and moderate reported content
-                    </p>
+                    <h1 className="text-[28px] font-black text-slate-900 tracking-tight">Reports</h1>
+                    <p className="text-[14px] text-slate-500 mt-0.5">User-submitted content reports requiring review.</p>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {[
-                        { label: 'Pending Reports', value: '24', color: '#f59e0b' },
-                        { label: 'Resolved Today', value: '12', color: '#22c55e' },
-                        { label: 'Total Reports', value: '156', color: '#8c00ff' },
-                    ].map((stat, index) => (
-                        <div
-                            key={index}
-                            className="rounded-2xl p-6 shadow-sm"
-                            style={{
-                                backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                                border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                            }}
-                        >
-                            <p
-                                className="text-[12px] leading-[18px] font-medium mb-2"
-                                style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                            >
-                                {stat.label}
-                            </p>
-                            <h3
-                                className="text-[32px] leading-[40px] font-semibold"
-                                style={{ color: stat.color }}
-                            >
-                                {stat.value}
-                            </h3>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Filters */}
-                <div className="flex gap-4">
-                    <div
-                        className="flex-1 relative"
-                        style={{
-                            backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                            borderRadius: '12px',
-                            border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                        }}
-                    >
-                        <Search
-                            size={18}
-                            strokeWidth={1.5}
-                            className="absolute left-4 top-1/2 -translate-y-1/2"
-                            style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Search reports..."
-                            className="w-full pl-12 pr-4 py-3 bg-transparent outline-none text-[14px] leading-[22px]"
-                            style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                        />
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                    {/* Filters */}
+                    <div className="px-6 py-4 border-b border-slate-50 flex flex-wrap items-center gap-2">
+                        {(['all', 'pending', 'resolved', 'dismissed'] as StatusFilter[]).map(s => (
+                            <button key={s} onClick={() => { setStatus(s); setPage(1); }}
+                                className={`px-3.5 py-1.5 rounded-xl text-[12px] font-bold capitalize transition-all ${
+                                    status === s
+                                        ? s === 'pending'   ? 'bg-amber-500 text-white'
+                                        : s === 'resolved'  ? 'bg-green-600 text-white'
+                                        : s === 'dismissed' ? 'bg-slate-500 text-white'
+                                        : 'bg-slate-900 text-white'
+                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                }`}>
+                                {s === 'all' ? 'All statuses' : STATUS_CONFIG[s]?.label ?? s}
+                            </button>
+                        ))}
+                        <div className="w-px h-5 bg-slate-200 mx-1" />
+                        <button onClick={() => { setReason(''); setPage(1); }}
+                            className={`px-3.5 py-1.5 rounded-xl text-[12px] font-bold transition-all ${
+                                !reason ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                            }`}>
+                            All reasons
+                        </button>
+                        {REPORT_REASONS.map(r => (
+                            <button key={r} onClick={() => { setReason(r); setPage(1); }}
+                                className={`px-3.5 py-1.5 rounded-xl text-[12px] font-bold capitalize transition-all ${
+                                    reason === r ? 'bg-[#8c00ff] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                }`}>
+                                {r.replace(/_/g, ' ')}
+                            </button>
+                        ))}
                     </div>
 
-                    <button
-                        className="flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all hover:bg-gray-50 border border-[#E2E8F0] shadow-sm"
-                        style={{
-                            backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                            color: isDarkMode ? '#ffffff' : '#0F172A',
-                            fontSize: '14px',
-                            lineHeight: '22px',
-                        }}
-                    >
-                        <Filter size={18} strokeWidth={1.5} />
-                        Filters
-                    </button>
-                </div>
+                    {/* Pending alert */}
+                    {!loading && pendingCount > 0 && status === 'all' && (
+                        <div className="mx-6 mt-4 flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-100 rounded-2xl text-[12px] font-semibold text-amber-700">
+                            <Clock size={14} /> {pendingCount} pending report{pendingCount > 1 ? 's' : ''} on this page
+                        </div>
+                    )}
 
-                {/* Filter Pills */}
-                <div className="flex gap-2">
-                    {['all', 'pending', 'resolved', 'dismissed'].map((filter) => (
-                        <button
-                            key={filter}
-                            onClick={() => setSelectedFilter(filter)}
-                            className="px-4 py-2 rounded-lg text-[13px] leading-[20px] font-medium capitalize transition-all"
-                            style={{
-                                backgroundColor:
-                                    selectedFilter === filter
-                                        ? (isDarkMode ? 'rgba(140,0,255,0.15)' : '#f3eefe')
-                                        : (isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC'),
-                                color: selectedFilter === filter ? '#8c00ff' : (isDarkMode ? '#94A3B8' : '#64748B'),
-                                border: selectedFilter === filter ? '1.5px solid #8c00ff' : 'none',
-                            }}
-                        >
-                            {filter}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Reports Table */}
-                <div
-                    className="rounded-2xl overflow-hidden shadow-sm"
-                    style={{
-                        backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
-                        border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                    }}
-                >
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
+                    {/* Table */}
+                    <div className="overflow-x-auto mt-2">
+                        <table className="w-full text-left">
                             <thead>
-                                <tr
-                                    style={{
-                                        borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                                    }}
-                                >
-                                    <th
-                                        className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
-                                        Report ID
-                                    </th>
-                                    <th
-                                        className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
-                                        Video
-                                    </th>
-                                    <th
-                                        className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
-                                        Reported By
-                                    </th>
-                                    <th
-                                        className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
-                                        Reason
-                                    </th>
-                                    <th
-                                        className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
-                                        Date
-                                    </th>
-                                    <th
-                                        className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
-                                        Status
-                                    </th>
-                                    <th
-                                        className="text-right px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
-                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                    >
-                                        Actions
-                                    </th>
+                                <tr className="bg-slate-50/60 border-b border-slate-100">
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Reporter</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Recording</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Reason</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Details</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Reported</th>
+                                    <th className="px-6 py-3.5 text-right text-[11px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {reports.map((report) => (
-                                    <tr
-                                        key={report.id}
-                                        className="transition-colors hover:bg-gray-50/50 dark:hover:bg-white/5"
-                                        style={{
-                                            borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC'}`,
-                                        }}
-                                    >
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className="text-[14px] leading-[22px] font-mono"
-                                                style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                            >
-                                                {report.id}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div>
-                                                <div
-                                                    className="text-[14px] leading-[22px] font-medium"
-                                                    style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                                >
-                                                    {report.videoTitle}
-                                                </div>
-                                                <div
-                                                    className="text-[12px] leading-[18px]"
-                                                    style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                                                >
-                                                    {report.videoId}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div>
-                                                <div
-                                                    className="text-[14px] leading-[22px]"
-                                                    style={{ color: isDarkMode ? '#ffffff' : '#0F172A' }}
-                                                >
-                                                    {report.reportedBy}
-                                                </div>
-                                                <div
-                                                    className="text-[12px] leading-[18px]"
-                                                    style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                                                >
-                                                    {report.reporterEmail}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className="inline-flex px-3 py-1 rounded-full text-[12px] leading-[18px] font-medium"
-                                                style={{
-                                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                                    color: '#ef4444',
-                                                }}
-                                            >
-                                                {report.reason}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className="text-[14px] leading-[22px]"
-                                                style={{ color: isDarkMode ? '#64748B' : '#94A3B8' }}
-                                            >
-                                                {report.date}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className="inline-flex px-3 py-1 rounded-full text-[12px] leading-[18px] font-medium capitalize"
-                                                style={{
-                                                    backgroundColor:
-                                                        report.status === 'pending'
-                                                            ? 'rgba(245, 158, 11, 0.1)'
-                                                            : 'rgba(34, 197, 94, 0.1)',
-                                                    color: report.status === 'pending' ? '#f59e0b' : '#22c55e',
-                                                }}
-                                            >
-                                                {report.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-gray-100 dark:hover:bg-white/10"
-                                                    style={{
-                                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
-                                                    }}
-                                                >
-                                                    <Eye
-                                                        size={16}
-                                                        strokeWidth={1.5}
-                                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                                    />
-                                                </button>
-                                                <button
-                                                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-red-500/10"
-                                                    style={{
-                                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                                    }}
-                                                >
-                                                    <Trash2 size={16} strokeWidth={1.5} style={{ color: '#ef4444' }} />
-                                                </button>
-                                                <button
-                                                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110 hover:bg-gray-200 dark:hover:bg-white/20"
-                                                    style={{
-                                                        backgroundColor: 'rgba(100, 116, 139, 0.1)',
-                                                    }}
-                                                >
-                                                    <X size={16} strokeWidth={1.5} style={{ color: '#64748B' }} />
-                                                </button>
-                                            </div>
+                            <tbody className="divide-y divide-slate-50">
+                                {loading ? (
+                                    Array(6).fill(0).map((_, i) => (
+                                        <tr key={i} className="animate-pulse">
+                                            <td className="px-6 py-4"><div className="h-4 w-28 bg-slate-100 rounded-full" /></td>
+                                            <td colSpan={6} className="px-6 py-4"><div className="h-4 bg-slate-100 rounded-lg" /></td>
+                                        </tr>
+                                    ))
+                                ) : data.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={7} className="px-6 py-20 text-center text-[13px] text-slate-400">
+                                            No reports found
                                         </td>
                                     </tr>
-                                ))}
+                                ) : data.map(report => {
+                                    const cfg        = STATUS_CONFIG[report.status] ?? STATUS_CONFIG.pending;
+                                    const isPending  = report.status === 'pending';
+                                    const isUpdating = updating === report.id;
+                                    return (
+                                        <tr key={report.id}
+                                            className={`hover:bg-slate-50/60 transition-colors ${isPending ? 'bg-amber-50/30' : ''}`}>
+                                            <td className="px-6 py-4">
+                                                <p className="text-[13px] font-semibold text-slate-800 leading-tight">{report.user_name}</p>
+                                                <p className="text-[11px] text-slate-400 mt-0.5">{report.user_email}</p>
+                                            </td>
+                                            <td className="px-6 py-4 max-w-[200px]">
+                                                {report.recording_title ? (
+                                                    <p className="text-[12px] font-medium text-slate-700 truncate">{report.recording_title}</p>
+                                                ) : (
+                                                    <span className="text-[11px] font-mono text-slate-400 select-all">{report.recording_encrypted_id}</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 capitalize">
+                                                    {report.reason.replace(/_/g, ' ')}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 max-w-[220px]">
+                                                {report.details
+                                                    ? <p className="text-[11px] text-slate-500 line-clamp-2">{report.details}</p>
+                                                    : <span className="text-slate-300 text-[11px]">—</span>
+                                                }
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${cfg.bg} ${cfg.color}`}>
+                                                    {cfg.icon} {cfg.label}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-[11px] text-slate-500 whitespace-nowrap">{fmtDate(report.created_at)}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="inline-flex items-center gap-1.5">
+                                                    {report.status !== 'resolved' && (
+                                                        <button disabled={isUpdating}
+                                                            onClick={() => handleStatus(report, 'resolved')}
+                                                            className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-green-50 text-green-700 hover:bg-green-100 transition-all disabled:opacity-40">
+                                                            Resolve
+                                                        </button>
+                                                    )}
+                                                    {report.status !== 'dismissed' && (
+                                                        <button disabled={isUpdating}
+                                                            onClick={() => handleStatus(report, 'dismissed')}
+                                                            className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all disabled:opacity-40">
+                                                            Dismiss
+                                                        </button>
+                                                    )}
+                                                    {report.status !== 'pending' && (
+                                                        <button disabled={isUpdating}
+                                                            onClick={() => handleStatus(report, 'pending')}
+                                                            className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all disabled:opacity-40">
+                                                            Reopen
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
 
                     {/* Pagination */}
-                    <div
-                        className="flex items-center justify-between px-6 py-4"
-                        style={{
-                            borderTop: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                        }}
-                    >
-                        <span
-                            className="text-[13px] leading-[20px]"
-                            style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                        >
-                            Showing 1-4 of 24 reports
-                        </span>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-gray-100 dark:hover:bg-white/10"
-                                style={{
-                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
-                                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                                }}
-                            >
-                                <ChevronLeft
-                                    size={16}
-                                    strokeWidth={1.5}
-                                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                />
+                    <div className="px-6 py-4 border-t border-slate-50 flex items-center justify-between">
+                        <p className="text-[12px] text-slate-500">
+                            Showing <span className="font-bold text-slate-900">{data.length}</span> reports
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || loading}
+                                className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all">
+                                <ChevronLeft size={16} />
                             </button>
-                            <button
-                                onClick={() => setCurrentPage(currentPage + 1)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:bg-gray-100 dark:hover:bg-white/10"
-                                style={{
-                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F8FAFC',
-                                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
-                                }}
-                            >
-                                <ChevronRight
-                                    size={16}
-                                    strokeWidth={1.5}
-                                    style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                                />
+                            <span className="text-[13px] font-bold text-slate-700 px-2">Page {page}</span>
+                            <button onClick={() => setPage(p => p + 1)} disabled={data.length < 20 || loading}
+                                className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all">
+                                <ChevronRight size={16} />
                             </button>
                         </div>
                     </div>

@@ -63,6 +63,24 @@ export interface RecordingListResponse {
     };
 }
 
+export interface UserIP {
+    ip: string;
+    geodata: {
+        city?: string;
+        country?: string;
+        country_code?: string;
+        region?: string;
+        latitude?: number;
+        longitude?: number;
+        [key: string]: unknown;
+    };
+    activity_count: number;
+    sources: string[];
+    device_types: string[];
+    first_seen: string | null;
+    last_seen: string | null;
+}
+
 export interface UserStats {
     total_users: { value: number; change: string; trend: 'up' | 'down' };
     verified_users: { value: number; change: string; trend: 'up' | 'down' };
@@ -86,5 +104,9 @@ export const userService = {
     getUserRecordings: async (id: string, page: number = 1, perPage: number = 10): Promise<RecordingListResponse> => {
         const response = await api.get(`/api/v1/admin/users/${id}/recordings?page=${page}&per_page=${perPage}`);
         return response.data;
-    }
+    },
+    getUserIPs: async (id: string): Promise<{ data: UserIP[] }> => {
+        const response = await api.get(`/api/v1/admin/users/${id}/ips`);
+        return response.data;
+    },
 };

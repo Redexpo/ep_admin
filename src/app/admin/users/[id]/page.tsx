@@ -23,10 +23,13 @@ import {
     LayoutGrid,
     List as ListIcon,
     MoreVertical,
-    Eye
+    Eye,
+    Globe,
+    Monitor,
+    Smartphone,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { userService, UserDetail, Recording } from '@/services/admin/userService';
+import { userService, UserDetail, Recording, UserIP } from '@/services/admin/userService';
 import { toast } from 'sonner';
 
 export default function UserDetailPage() {
@@ -37,8 +40,10 @@ export default function UserDetailPage() {
     const [isDarkMode] = useState(false);
     const [user, setUser] = useState<UserDetail | null>(null);
     const [recordings, setRecordings] = useState<Recording[]>([]);
+    const [ips, setIps] = useState<UserIP[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRecordingsLoading, setIsRecordingsLoading] = useState(true);
+    const [isIPsLoading, setIsIPsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
     const [pagination, setPagination] = useState({
@@ -81,9 +86,22 @@ export default function UserDetailPage() {
         }
     }, [userId]);
 
+    const fetchUserIPs = useCallback(async () => {
+        try {
+            setIsIPsLoading(true);
+            const response = await userService.getUserIPs(userId);
+            if (response.data) setIps(response.data);
+        } catch {
+            // non-critical, fail silently
+        } finally {
+            setIsIPsLoading(false);
+        }
+    }, [userId]);
+
     useEffect(() => {
         fetchUserData();
-    }, [fetchUserData]);
+        fetchUserIPs();
+    }, [fetchUserData, fetchUserIPs]);
 
     useEffect(() => {
         fetchUserRecordings(currentPage);
@@ -485,6 +503,102 @@ export default function UserDetailPage() {
                                 </button>
                             </div>
                         )}
+                    </div>
+                </div>
+
+                {/* IP Activity */}
+                <div className="space-y-4 pb-10">
+                    <div className="flex items-center justify-between px-2">
+                        <h2 className="text-[22px] font-black tracking-tight text-[#0F172A]">IP Activity</h2>
+                        <span className="text-[12px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-xl">
+                            {isIPsLoading ? '…' : `${ips.length} unique IP${ips.length !== 1 ? 's' : ''}`}
+                        </span>
+                    </div>
+
+                    <div className="bg-white rounded-[32px] border border-[#E2E8F0] shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-slate-50/60 border-b border-slate-100">
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">IP Address</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Location</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Source</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Device</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Events</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">First Seen</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Last Seen</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {isIPsLoading ? (
+                                        Array(3).fill(0).map((_, i) => (
+                                            <tr key={i} className="animate-pulse">
+                                                <td className="px-6 py-4"><div className="h-4 w-28 bg-slate-100 rounded-full" /></td>
+                                                <td colSpan={6} className="px-6 py-4"><div className="h-4 bg-slate-100 rounded-lg" /></td>
+                                            </tr>
+                                        ))
+                                    ) : ips.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="px-6 py-16 text-center">
+                                                <Globe size={32} className="mx-auto text-slate-200 mb-3" />
+                                                <p className="text-[13px] text-slate-400 font-medium">No IP activity recorded for this user</p>
+                                            </td>
+                                        </tr>
+                                    ) : ips.map((ip, idx) => {
+                                        const geo = ip.geodata;
+                                        const city    = geo.city    || null;
+                                        const country = geo.country || null;
+                                        const region  = geo.region  || null;
+                                        const location = [city, region, country].filter(Boolean).join(', ') || '—';
+                                        const fmtTs = (s: string | null) =>
+                                            s ? new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                                        return (
+                                            <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <span className="font-mono text-[13px] font-semibold text-slate-800 select-all">{ip.ip}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-1.5">
+                                                        {country && (
+                                                            <Globe size={12} className="text-slate-400 shrink-0" />
+                                                        )}
+                                                        <span className="text-[12px] text-slate-600">{location}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {ip.sources.length ? ip.sources.map(s => (
+                                                            <span key={s} className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#f3eefe] text-[#8c00ff] capitalize">
+                                                                {s.replace(/_/g, ' ')}
+                                                            </span>
+                                                        )) : <span className="text-slate-300 text-[11px]">—</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {ip.device_types.length ? ip.device_types.map(d => (
+                                                            <span key={d} className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 capitalize">
+                                                                {d.toLowerCase().includes('mobile') ? <Smartphone size={9} /> : <Monitor size={9} />}
+                                                                {d.replace(/_/g, ' ')}
+                                                            </span>
+                                                        )) : <span className="text-slate-300 text-[11px]">—</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[13px] font-black text-slate-800">{ip.activity_count}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[11px] text-slate-500 whitespace-nowrap">{fmtTs(ip.first_seen)}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[11px] text-slate-500 whitespace-nowrap">{fmtTs(ip.last_seen)}</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
