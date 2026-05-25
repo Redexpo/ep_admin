@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Search, ChevronLeft, ChevronRight, MessageCircle, Video,
     Camera, User, ThumbsUp, Reply, Filter,
@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 type Tab = 'comments' | 'reactions';
 type DocFilter = 'all' | 'recording' | 'screenshot';
 
-const DOC_TYPE_LABELS: Record<string, { label: string; icon: JSX.Element; bg: string; text: string }> = {
+const DOC_TYPE_LABELS: Record<string, { label: string; icon: React.ReactElement; bg: string; text: string }> = {
     recording:  { label: 'Video',      icon: <Video  size={10} />, bg: 'bg-blue-50',   text: 'text-blue-700'   },
     screenshot: { label: 'Screenshot', icon: <Camera size={10} />, bg: 'bg-purple-50', text: 'text-purple-700' },
     unknown:    { label: 'Unknown',    icon: <MessageCircle size={10} />, bg: 'bg-slate-100', text: 'text-slate-500' },
