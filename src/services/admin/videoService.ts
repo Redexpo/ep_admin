@@ -36,6 +36,15 @@ export interface Video {
     media_info?: any;
 }
 
+export interface AppLog {
+    level: 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
+    service: string;
+    action: string;
+    message: string;
+    metadata: Record<string, any>;
+    created_at: string;
+}
+
 export interface VideoListResponse {
     status: string;
     message: string;
@@ -77,5 +86,9 @@ export const videoService = {
     updateReportStatus: async (reportId: string, status: string): Promise<{ status: string; message: string }> => {
         const response = await api.patch(`/api/v1/admin/videos/reports/${reportId}?status=${status}`);
         return response.data;
-    }
+    },
+    getVideoLogs: async (id: string): Promise<{ status: string; data: AppLog[] }> => {
+        const response = await api.get(`/api/v1/admin/videos/${id}/logs`);
+        return response.data;
+    },
 };

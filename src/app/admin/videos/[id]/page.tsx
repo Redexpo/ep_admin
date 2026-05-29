@@ -25,10 +25,15 @@ import {
     Activity,
     Monitor,
     Wifi,
-    ExternalLink
+    ExternalLink,
+    ScrollText,
+    CheckCircle2,
+    XCircle,
+    AlertCircle,
+    Zap,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { videoService, Video as VideoType, ViewRecord } from '@/services/admin/videoService';
+import { videoService, Video as VideoType, ViewRecord, AppLog } from '@/services/admin/videoService';
 import { toast } from 'sonner';
 import { DASHBOARD_APP_URL } from '@/lib/constants';
 
@@ -39,8 +44,11 @@ export default function VideoDetailPage() {
 
     const [video, setVideo] = useState<VideoType | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'transcription' | 'reports' | 'views' | 'tech'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'transcription' | 'reports' | 'views' | 'tech' | 'logs'>('overview');
     const [isDeleting, setIsDeleting] = useState(false);
+    const [logs, setLogs] = useState<AppLog[]>([]);
+    const [logsLoading, setLogsLoading] = useState(false);
+    const [logsFetched, setLogsFetched] = useState(false);
 
     const fetchVideoData = useCallback(async () => {
         try {
@@ -60,6 +68,23 @@ export default function VideoDetailPage() {
     useEffect(() => {
         fetchVideoData();
     }, [fetchVideoData]);
+
+    useEffect(() => {
+        if (activeTab !== 'logs' || logsFetched) return;
+        const fetchLogs = async () => {
+            setLogsLoading(true);
+            try {
+                const res = await videoService.getVideoLogs(videoId);
+                setLogs(res.data || []);
+            } catch {
+                toast.error('Failed to load activity logs');
+            } finally {
+                setLogsLoading(false);
+                setLogsFetched(true);
+            }
+        };
+        fetchLogs();
+    }, [activeTab, logsFetched, videoId]);
 
     const handleReportStatus = async (reportId: string, status: string) => {
         try {
@@ -202,6 +227,7 @@ export default function VideoDetailPage() {
                         { id: 'reports', label: `Reports (${video.reports?.length || 0})`, icon: AlertTriangle, color: video.reports?.length ? 'text-red-500' : '' },
                         { id: 'views', label: `Views (${video.views_list?.length || video.views || 0})`, icon: Eye },
                         { id: 'tech', label: 'Technical Info', icon: Activity },
+                        { id: 'logs', label: 'Activity Log', icon: ScrollText },
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -451,6 +477,47 @@ export default function VideoDetailPage() {
                             </div>
                         )}
 
+                        {activeTab === 'logs' && (
+                            <div className="bg-white rounded-[40px] border border-[#E2E8F0] p-10 animate-in fade-in zoom-in-95 duration-300">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-[#f3eefe] flex items-center justify-center">
+                                            <ScrollText size={20} className="text-[#8c00ff]" />
+                                        </div>
+                                        <h2 className="text-[20px] font-black text-[#0F172A]">Activity Journey</h2>
+                                    </div>
+                                    {!logsLoading && (
+                                        <span className="px-3 py-1 rounded-full bg-slate-100 text-[#64748B] text-[12px] font-bold">
+                                            {logs.length} {logs.length === 1 ? 'event' : 'events'}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {logsLoading ? (
+                                    <div className="flex items-center justify-center py-20">
+                                        <div className="relative w-10 h-10">
+                                            <div className="absolute inset-0 border-4 border-purple-100 rounded-full" />
+                                            <div className="absolute inset-0 border-4 border-[#8c00ff] border-t-transparent rounded-full animate-spin" />
+                                        </div>
+                                    </div>
+                                ) : logs.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-[32px] border border-dashed border-slate-200">
+                                        <ScrollText size={48} className="text-slate-200 mb-4" />
+                                        <p className="font-bold text-slate-400">No activity logged for this recording yet.</p>
+                                    </div>
+                                ) : (
+                                    <div className="relative">
+                                        <div className="absolute left-[19px] top-0 bottom-0 w-px bg-gradient-to-b from-[#8c00ff]/20 via-slate-200 to-transparent" />
+                                        <div className="space-y-1">
+                                            {logs.map((log, i) => (
+                                                <LogEntry key={i} log={log} isLast={i === logs.length - 1} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {activeTab === 'tech' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in zoom-in-95 duration-300">
                                 <div className="bg-white p-8 rounded-[40px] border border-[#E2E8F0] space-y-6">
@@ -580,3 +647,75 @@ function ActionButton({ icon: Icon, label }: any) {
 const formatNumber = (num: number) => {
     return new Intl.NumberFormat('en-US').format(num || 0);
 };
+
+const LOG_LEVEL_CONFIG = {
+    INFO:     { dot: 'bg-[#8c00ff]',  badge: 'bg-[#f3eefe] text-[#8c00ff]',  icon: CheckCircle2, ring: 'ring-purple-100' },
+    WARNING:  { dot: 'bg-amber-400',   badge: 'bg-amber-50 text-amber-600',    icon: AlertCircle,  ring: 'ring-amber-100' },
+    ERROR:    { dot: 'bg-red-500',     badge: 'bg-red-50 text-red-600',        icon: XCircle,      ring: 'ring-red-100' },
+    CRITICAL: { dot: 'bg-red-700',     badge: 'bg-red-100 text-red-800',       icon: Zap,          ring: 'ring-red-200' },
+} as const;
+
+function toReadableAction(action: string) {
+    return action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function LogEntry({ log, isLast }: { log: AppLog; isLast: boolean }) {
+    const cfg = LOG_LEVEL_CONFIG[log.level] ?? LOG_LEVEL_CONFIG.INFO;
+    const LevelIcon = cfg.icon;
+    const metaEntries = Object.entries(log.metadata || {}).filter(([, v]) => v !== null && v !== undefined && v !== '');
+    const date = new Date(log.created_at);
+
+    return (
+        <div className="flex gap-5 pb-8 last:pb-0">
+            {/* Timeline dot */}
+            <div className="flex-shrink-0 relative z-10 mt-1">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ring-4 ${cfg.ring} bg-white`}>
+                    <div className={`w-5 h-5 rounded-full ${cfg.dot} flex items-center justify-center`}>
+                        <LevelIcon size={11} className="text-white" strokeWidth={3} />
+                    </div>
+                </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0 pt-1.5">
+                <div className="flex items-start justify-between gap-3 mb-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[15px] font-black text-[#0F172A]">
+                            {toReadableAction(log.action)}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${cfg.badge}`}>
+                            {log.level}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
+                            {log.service}
+                        </span>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                        <p className="text-[12px] font-bold text-slate-500">
+                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                        <p className="text-[11px] font-medium text-slate-400">
+                            {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </p>
+                    </div>
+                </div>
+
+                <p className="text-[13px] font-medium text-[#64748B] leading-relaxed mb-2">
+                    {log.message}
+                </p>
+
+                {metaEntries.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        {metaEntries.map(([k, v]) => (
+                            <span key={k} className="px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-xl text-[11px] font-bold text-slate-500">
+                                {k}: <span className="text-slate-700">{String(v)}</span>
+                            </span>
+                        ))}
+                    </div>
+                )}
+
+                {!isLast && <div className="mt-6 border-b border-dashed border-slate-100" />}
+            </div>
+        </div>
+    );
+}
