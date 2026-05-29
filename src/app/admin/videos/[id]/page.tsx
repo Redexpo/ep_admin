@@ -70,11 +70,11 @@ export default function VideoDetailPage() {
     }, [fetchVideoData]);
 
     useEffect(() => {
-        if (activeTab !== 'logs' || logsFetched) return;
+        if (activeTab !== 'logs' || logsFetched || !video?.encrypted_id) return;
         const fetchLogs = async () => {
             setLogsLoading(true);
             try {
-                const res = await videoService.getVideoLogs(videoId);
+                const res = await videoService.getVideoLogs(video.encrypted_id);
                 setLogs(res.data || []);
             } catch {
                 toast.error('Failed to load activity logs');
@@ -84,7 +84,7 @@ export default function VideoDetailPage() {
             }
         };
         fetchLogs();
-    }, [activeTab, logsFetched, videoId]);
+    }, [activeTab, logsFetched, video?.encrypted_id]);
 
     const handleReportStatus = async (reportId: string, status: string) => {
         try {
