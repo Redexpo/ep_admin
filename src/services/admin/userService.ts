@@ -37,6 +37,8 @@ export interface UserDetail extends User {
     plan_name?: string;
     subscription_status?: string;
     billing_cycle?: string;
+    current_workspace_id?: string;
+    last_login?: string;
 }
 
 export interface Recording {

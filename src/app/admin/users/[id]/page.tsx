@@ -27,6 +27,8 @@ import {
     Globe,
     Monitor,
     Smartphone,
+    Building2,
+    LogIn,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { userService, UserDetail, Recording, UserIP } from '@/services/admin/userService';
@@ -118,6 +120,17 @@ export default function UserDetailPage() {
             month: 'long',
             day: 'numeric',
             year: 'numeric'
+        });
+    };
+
+    const formatDateTime = (isoString: string) => {
+        return new Date(isoString).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
         });
     };
 
@@ -277,7 +290,7 @@ export default function UserDetailPage() {
                 </div>
 
                 {/* Profile Overview Tiles */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-white p-6 rounded-[32px] border border-[#E2E8F0] shadow-sm relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
                             <Video size={80} className="text-[#8c00ff]" />
@@ -287,17 +300,6 @@ export default function UserDetailPage() {
                         <div className="mt-4 flex items-center gap-1.5 text-[12px] font-bold text-green-500">
                             <TrendingUp size={14} className="" />
                             +12% this month
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-[32px] border border-[#E2E8F0] shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                            <HardDrive size={80} className="text-[#3b82f6]" />
-                        </div>
-                        <p className="text-[14px] font-bold text-[#64748B] mb-1">Storage Usage</p>
-                        <h3 className="text-[36px] font-black tracking-tighter text-[#0F172A]">1.2 <span className="text-[20px] font-bold text-[#94A3B8]">GB</span></h3>
-                        <div className="mt-4 w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-[#3b82f6] w-[45%] rounded-full"></div>
                         </div>
                     </div>
 
@@ -320,8 +322,11 @@ export default function UserDetailPage() {
                     </div>
                 </div>
 
-                {/* Main Content: Full Width Recordings */}
-                <div className="space-y-6">
+                {/* Main Content: Recordings + IP left, Details panel right */}
+                <div className="flex flex-col xl:flex-row gap-6 items-start">
+
+                {/* Left column */}
+                <div className="flex-1 min-w-0 space-y-6">
                     <div className="flex items-center justify-between px-2">
                         <h2 className="text-[22px] font-black tracking-tight text-[#0F172A]">Recent Recordings</h2>
                         <div className="flex items-center gap-2">
@@ -504,10 +509,9 @@ export default function UserDetailPage() {
                             </div>
                         )}
                     </div>
-                </div>
 
                 {/* IP Activity */}
-                <div className="space-y-4 pb-10">
+                <div className="space-y-4">
                     <div className="flex items-center justify-between px-2">
                         <h2 className="text-[22px] font-black tracking-tight text-[#0F172A]">IP Activity</h2>
                         <span className="text-[12px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-xl">
@@ -600,6 +604,43 @@ export default function UserDetailPage() {
                             </table>
                         </div>
                     </div>
+                </div>
+
+                {/* End left column */}
+                </div>
+
+                {/* Right details panel */}
+                <div className="w-full xl:w-72 shrink-0 pb-10">
+                    <div className="bg-white rounded-[32px] border border-[#E2E8F0] shadow-sm p-6 space-y-1">
+                        <h3 className="text-[15px] font-black text-[#0F172A] tracking-tight mb-5">Account Details</h3>
+
+                        <div className="divide-y divide-slate-50">
+                            {/* Current Workspace ID */}
+                            <div className="py-4 space-y-2">
+                                <div className="flex items-center gap-1.5">
+                                    <Building2 size={12} className="text-slate-400" />
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Current Workspace</span>
+                                </div>
+                                <p className="font-mono text-[11px] font-bold text-[#0F172A] break-all bg-slate-50 rounded-xl px-3 py-2 border border-slate-100 select-all">
+                                    {user.current_workspace_id ?? '—'}
+                                </p>
+                            </div>
+
+                            {/* Last Login */}
+                            <div className="py-4 space-y-2">
+                                <div className="flex items-center gap-1.5">
+                                    <LogIn size={12} className="text-slate-400" />
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Last Login</span>
+                                </div>
+                                <p className="text-[13px] font-bold text-[#0F172A]">
+                                    {user.last_login ? formatDateTime(user.last_login) : '—'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* End flex row */}
                 </div>
             </div>
         </AdminLayout>
