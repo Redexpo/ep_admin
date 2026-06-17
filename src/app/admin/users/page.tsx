@@ -204,7 +204,6 @@ export default function AdminUsersPage() {
                                         year: 'numeric'
                                     });
                                     const status = user.subscription_status || (user.is_active ? 'active' : 'inactive');
-                                    const plan = user.plan_name || 'Starter';
 
                                     return (
                                         <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
@@ -235,11 +234,23 @@ export default function AdminUsersPage() {
                                                 </Link>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`inline-flex px-2.5 py-1 rounded-lg text-[12px] font-bold ${plan === 'Enterprise' ? 'bg-purple-100 text-purple-700' :
-                                                        plan === 'Pro' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-[#0F172A]'
+                                                {user.plan_name ? (
+                                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide ${
+                                                        user.billing_model === 'custom'
+                                                            ? 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200'
+                                                            : user.billing_model === 'flat_team'
+                                                            ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200'
+                                                            : user.billing_model === 'per_user'
+                                                            ? 'bg-purple-100 text-purple-700 ring-1 ring-purple-200'
+                                                            : 'bg-slate-100 text-slate-600 ring-1 ring-slate-200'
                                                     }`}>
-                                                    {plan}
-                                                </span>
+                                                        {user.plan_name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-50 text-red-400 ring-1 ring-red-100">
+                                                        No Plan
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`inline-flex items-center gap-1 text-[12px] font-bold capitalize ${user.auth_provider === 'google' ? 'text-blue-600' : 'text-slate-500'}`}>

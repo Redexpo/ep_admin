@@ -12,8 +12,9 @@ export interface User {
     auth_provider: string;
     picture?: string;
     recordings_count?: number;
-    plan_name?: string;
-    subscription_status?: string;
+    plan_name?: string | null;
+    billing_model?: string | null;
+    subscription_status?: string | null;
 }
 
 export interface UserListResponse {
