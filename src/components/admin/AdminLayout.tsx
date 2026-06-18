@@ -46,7 +46,7 @@ const navGroups: {
         items: [
             { name: 'Plans & Pricing',  path: '/admin/plans',                         icon: Layers,   countKey: 'plans'         },
             { name: 'Subscriptions',    path: '/admin/subscriptions',                 icon: Repeat,   countKey: 'subscriptions' },
-            { name: 'Assignments',      path: '/admin/subscriptions/assignments',     icon: Gift                                },
+            { name: 'Assignments',      path: '/admin/subscriptions/assignments',     icon: Gift,  countKey: 'assignments'      },
             { name: 'Payments',         path: '/admin/payments',                      icon: Receipt,  countKey: 'payments'      },
             { name: 'Gateway',          path: '/admin/gateway',                   icon: Landmark },
             { name: 'G. Products',      path: '/admin/gateway/products',          icon: Package  },

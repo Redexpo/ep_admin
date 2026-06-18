@@ -18,6 +18,7 @@ export interface NavCounts {
     contacts_sales: number;
     admins: number;
     ips: number;
+    assignments: number;
 }
 
 export async function fetchNavCounts(): Promise<NavCounts> {
