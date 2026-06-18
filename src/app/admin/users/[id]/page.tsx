@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     ChevronLeft,
+    Gift,
     Mail,
     Calendar,
     Shield,
@@ -31,6 +32,7 @@ import {
     LogIn,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import AssignPlanModal from '@/components/admin/AssignPlanModal';
 import { userService, UserDetail, Recording, UserIP } from '@/services/admin/userService';
 import { toast } from 'sonner';
 
@@ -48,6 +50,7 @@ export default function UserDetailPage() {
     const [isIPsLoading, setIsIPsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+    const [showAssignModal, setShowAssignModal] = useState(false);
     const [pagination, setPagination] = useState({
         total: 0,
         totalPages: 0,
@@ -174,6 +177,13 @@ export default function UserDetailPage() {
                         <button className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-[#E2E8F0] bg-white text-[14px] font-bold text-[#64748B] hover:text-[#0F172A] hover:bg-slate-50 transition-all active:scale-95">
                             <Settings size={18} />
                             Settings
+                        </button>
+                        <button
+                            onClick={() => setShowAssignModal(true)}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white text-[14px] font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                            style={{ background: 'linear-gradient(135deg, #8c00ff 0%, #7c3aed 100%)' }}
+                        >
+                            <Gift size={16} /> Assign Plan
                         </button>
                         <button className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#0F172A] text-white text-[14px] font-bold shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95">
                             Quick Actions
@@ -643,6 +653,14 @@ export default function UserDetailPage() {
                 {/* End flex row */}
                 </div>
             </div>
+            {showAssignModal && user && (
+                <AssignPlanModal
+                    userId={user.id}
+                    userEmail={user.email}
+                    onClose={() => setShowAssignModal(false)}
+                    onSuccess={() => setShowAssignModal(false)}
+                />
+            )}
         </AdminLayout>
     );
 }
