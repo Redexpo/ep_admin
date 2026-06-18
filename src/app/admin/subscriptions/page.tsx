@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Search, ChevronLeft, ChevronRight, Edit2, Eye,
-    CheckCircle2, XCircle, AlertCircle, Clock, User, Users
+    CheckCircle2, XCircle, AlertCircle, Clock, User, Users, RefreshCw, Gift
 } from 'lucide-react';
 import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -11,11 +11,13 @@ import { adminSubscriptionService, AdminSubscription } from '@/services/admin/su
 import { toast } from 'sonner';
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; chip: string; filter: string }> = {
-    active:    { label: 'Active',    icon: <CheckCircle2 size={12} />, chip: 'bg-green-50  text-green-700  border-green-100',  filter: 'active'    },
-    cancelled: { label: 'Cancelled', icon: <XCircle      size={12} />, chip: 'bg-red-50    text-red-700    border-red-100',    filter: 'cancelled' },
-    past_due:  { label: 'Past Due',  icon: <AlertCircle  size={12} />, chip: 'bg-amber-50  text-amber-700  border-amber-100',  filter: 'past_due'  },
-    trialing:  { label: 'Trialing',  icon: <Clock        size={12} />, chip: 'bg-blue-50   text-blue-700   border-blue-100',   filter: 'trialing'  },
-    free:      { label: 'Free',      icon: <CheckCircle2 size={12} />, chip: 'bg-slate-100 text-slate-600  border-slate-200',  filter: 'free'      },
+    active:    { label: 'Active',    icon: <CheckCircle2 size={12} />, chip: 'bg-green-50  text-green-700  border-green-100',   filter: 'active'    },
+    cancelled: { label: 'Cancelled', icon: <XCircle      size={12} />, chip: 'bg-red-50    text-red-700    border-red-100',     filter: 'cancelled' },
+    past_due:  { label: 'Past Due',  icon: <AlertCircle  size={12} />, chip: 'bg-amber-50  text-amber-700  border-amber-100',   filter: 'past_due'  },
+    trialing:  { label: 'Trialing',  icon: <Clock        size={12} />, chip: 'bg-blue-50   text-blue-700   border-blue-100',    filter: 'trialing'  },
+    free:      { label: 'Free',      icon: <CheckCircle2 size={12} />, chip: 'bg-slate-100 text-slate-600  border-slate-200',   filter: 'free'      },
+    expired:   { label: 'Expired',   icon: <Clock        size={12} />, chip: 'bg-slate-100 text-slate-500  border-slate-200',   filter: 'expired'   },
+    replaced:  { label: 'Replaced',  icon: <RefreshCw    size={12} />, chip: 'bg-purple-50 text-purple-600 border-purple-100',  filter: 'replaced'  },
 };
 
 export default function SubscriptionsPage() {
@@ -138,6 +140,7 @@ export default function SubscriptionsPage() {
                                     <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                                     <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Billing</th>
                                     <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Seats</th>
+                                    <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Next Billing</th>
                                     <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Created</th>
                                     <th className="px-6 py-3.5 text-right text-[11px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
                                 </tr>
@@ -146,14 +149,14 @@ export default function SubscriptionsPage() {
                                 {isLoading ? (
                                     Array(6).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan={7} className="px-6 py-4">
+                                            <td colSpan={8} className="px-6 py-4">
                                                 <div className="h-5 bg-slate-100 rounded-lg w-full" />
                                             </td>
                                         </tr>
                                     ))
                                 ) : filtered.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-24 text-center">
+                                        <td colSpan={8} className="px-6 py-24 text-center">
                                             <div className="flex flex-col items-center gap-3 text-slate-300">
                                                 <User size={40} strokeWidth={1} />
                                                 <p className="text-[14px] text-slate-400 font-medium">No subscriptions found</p>
@@ -189,11 +192,29 @@ export default function SubscriptionsPage() {
                                                 </td>
                                                 {/* Billing */}
                                                 <td className="px-6 py-4">
-                                                    <span className="text-[13px] text-slate-600 capitalize font-medium">{sub.billing_cycle}</span>
+                                                    {sub.subscription_source === 'admin_assigned' ? (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-violet-50 text-violet-700 border border-violet-100">
+                                                            <Gift size={10} /> Assigned
+                                                        </span>
+                                                    ) : sub.billing_cycle === 'none' ? (
+                                                        <span className="text-[13px] text-slate-400 font-medium">—</span>
+                                                    ) : (
+                                                        <span className="text-[13px] text-slate-600 capitalize font-medium">{sub.billing_cycle}</span>
+                                                    )}
                                                 </td>
                                                 {/* Seats */}
                                                 <td className="px-6 py-4">
                                                     <span className="text-[13px] font-bold text-slate-900">{sub.seats}</span>
+                                                </td>
+                                                {/* Next Billing */}
+                                                <td className="px-6 py-4">
+                                                    {sub.current_period_end ? (
+                                                        <span className="text-[12px] text-slate-600 font-medium">
+                                                            {new Date(sub.current_period_end).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[12px] text-slate-400">—</span>
+                                                    )}
                                                 </td>
                                                 {/* Created */}
                                                 <td className="px-6 py-4">

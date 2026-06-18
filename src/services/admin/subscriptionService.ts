@@ -5,9 +5,11 @@ export interface AdminSubscription {
     user_id: string;
     user_email: string;
     plan_name: string;
-    status: 'free' | 'active' | 'cancelled' | 'past_due' | 'trialing';
+    status: 'free' | 'active' | 'cancelled' | 'past_due' | 'trialing' | 'expired' | 'replaced';
     billing_cycle: 'none' | 'monthly' | 'annual';
     seats: number;
+    subscription_source: string;
+    current_period_end?: string;
     created_at: string;
 }
 
