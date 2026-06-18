@@ -47,6 +47,62 @@ export interface AdminSubscriptionDetail {
     current_period_end?: string;
     payment_gateway?: string;
     gateway_subscription_id?: string;
+    subscription_source: string;
+    assigned_by_admin_id?: string;
+    assignment_notes?: string;
+    active_assignment?: AssignmentRecord | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface AssignmentFeatures {
+    cap_max_recordings: number;
+    cap_max_recording_minutes: number;
+    cap_max_transcription_uses: number;
+    cap_max_chapter_uses: number;
+    cap_max_generate_uses: number;
+    cap_max_active_workflows: number;
+    video_quality_max: number;
+    allow_custom_thumbnail: boolean;
+    allow_download: boolean;
+    allow_password_protect: boolean;
+    allow_watermark_removal: boolean;
+    allow_camelai: boolean;
+    allow_sdk: boolean;
+    allow_video_upload: boolean;
+    allow_generate: boolean;
+    allow_workflows: boolean;
+}
+
+export interface AdminAssignPlanRequest {
+    user_id: string;
+    plan_id: string;
+    months?: number;
+    end_date?: string;
+    seats: number;
+    notes: string;
+    features: AssignmentFeatures;
+}
+
+export interface AdminRevokeAssignmentRequest {
+    notes?: string;
+}
+
+export interface AssignmentRecord {
+    id: string;
+    user_id: string;
+    assigned_by_admin_id: string;
+    plan_id?: string;
+    plan_name: string;
+    user_subscription_id: string;
+    seats: number;
+    notes: string;
+    start_date: string;
+    end_date: string;
+    features_snapshot: Record<string, unknown>;
+    status: string;
+    revoked_at?: string;
+    revoked_by_admin_id?: string;
     created_at: string;
     updated_at: string;
 }
@@ -160,5 +216,28 @@ export const adminSubscriptionService = {
     async getPaymentOrderDetail(orderId: string): Promise<AdminPaymentOrderDetail> {
         const response = await api.get(`/api/v1/admin/payments/orders/${orderId}`);
         return response.data;
-    }
+    },
+
+    // Assignment Management
+    async assignPlan(data: AdminAssignPlanRequest): Promise<AssignmentRecord> {
+        const response = await api.post("/api/v1/admin/subscriptions/assign", data);
+        return response.data;
+    },
+
+    async listAssignments(page: number = 1, limit: number = 20, status?: string): Promise<{ assignments: AssignmentRecord[]; total: number; page: number; limit: number }> {
+        const params: Record<string, unknown> = { page, limit };
+        if (status) params.status = status;
+        const response = await api.get("/api/v1/admin/subscriptions/assignments", { params });
+        return response.data;
+    },
+
+    async revokeAssignment(assignmentId: string, data: AdminRevokeAssignmentRequest): Promise<AssignmentRecord> {
+        const response = await api.post(`/api/v1/admin/subscriptions/assignments/${assignmentId}/revoke`, data);
+        return response.data;
+    },
+
+    async getUserAssignments(userId: string): Promise<AssignmentRecord[]> {
+        const response = await api.get(`/api/v1/admin/subscriptions/${userId}/assignments`);
+        return response.data;
+    },
 };

@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback, use } from 'react';
 import {
     ArrowLeft, CheckCircle2, XCircle, AlertCircle, Clock,
     CreditCard, Users, Calendar, Zap, Download, GitBranch,
-    Wand2, User, Tag, Shield, Edit2, RefreshCw, Image as ImageIcon, Lock, Sparkles, Video
+    Wand2, User, Tag, Shield, Edit2, RefreshCw, Image as ImageIcon, Lock, Sparkles, Video,
+    Gift, RotateCcw
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
+import AssignPlanModal from '@/components/admin/AssignPlanModal';
 import { adminSubscriptionService, AdminSubscriptionDetail } from '@/services/admin/subscriptionService';
 import { toast } from 'sonner';
 
@@ -18,6 +20,8 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ u
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [data, setData] = useState<AdminSubscriptionDetail | null>(null);
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [revoking, setRevoking] = useState(false);
 
     const fetchDetail = useCallback(async () => {
         try {
@@ -34,6 +38,22 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ u
 
     useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
+    const handleRevoke = async () => {
+        if (!data?.active_assignment) return;
+        if (!confirm('Revoke this assignment? The user will be downgraded to the free plan immediately.')) return;
+        try {
+            setRevoking(true);
+            await adminSubscriptionService.revokeAssignment(data.active_assignment.id, { notes: 'Revoked from admin panel' });
+            toast.success('Assignment revoked — user downgraded to free plan');
+            fetchDetail();
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to revoke assignment';
+            toast.error(msg);
+        } finally {
+            setRevoking(false);
+        }
+    };
+
     const statusConfig: Record<string, { icon: React.ReactNode; classes: string; label: string }> = {
         active:    { icon: <CheckCircle2 size={14} />, classes: 'bg-green-50 text-green-700 border-green-200',    label: 'Active' },
         cancelled: { icon: <XCircle size={14} />,      classes: 'bg-red-50 text-red-700 border-red-200',          label: 'Cancelled' },
@@ -43,10 +63,22 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ u
         replaced:  { icon: <RefreshCw size={14} />,    classes: 'bg-purple-50 text-purple-700 border-purple-200', label: 'Replaced' },
     };
 
+    const sourceConfig: Record<string, { label: string; classes: string }> = {
+        admin_assigned: { label: 'Admin Assigned', classes: 'bg-violet-50 text-violet-700 border-violet-200' },
+        paddle:         { label: 'Paddle',          classes: 'bg-blue-50 text-blue-700 border-blue-200' },
+        organic:        { label: 'Organic',         classes: 'bg-slate-50 text-slate-500 border-slate-200' },
+    };
+
     const fmt = (date?: string) => date
         ? new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
         : '—';
     const capLabel = (n: number) => n === -1 ? '∞' : String(n);
+
+    const daysLeft = (endDate?: string) => {
+        if (!endDate) return null;
+        const diff = Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000);
+        return diff;
+    };
 
     if (isLoading) {
         return (
@@ -75,6 +107,9 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ u
     }
 
     const status = statusConfig[data.status] ?? statusConfig['expired'];
+    const source = sourceConfig[data.subscription_source] ?? sourceConfig['organic'];
+    const days = daysLeft(data.current_period_end);
+    const isAdminAssigned = data.subscription_source === 'admin_assigned' && data.status === 'active';
 
     const usageItems = [
         { label: 'Recordings', used: data.recordings_used, cap: data.cap_max_recordings },
@@ -115,20 +150,72 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ u
                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase border ${status.classes}`}>
                                     {status.icon} {status.label}
                                 </span>
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase border ${source.classes}`}>
+                                    {source.label}
+                                </span>
                             </div>
                             {data.user_name && (
                                 <p className="text-slate-500 font-medium text-[14px] mt-0.5">{data.user_email}</p>
                             )}
                         </div>
                     </div>
-                    <Link
-                        href={`/admin/subscriptions/${user_id}/edit`}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-[14px] text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95"
-                        style={{ background: 'linear-gradient(135deg, #8c00ff 0%, #7c3aed 100%)' }}
-                    >
-                        <Edit2 size={16} /> Edit Usage & Entitlements
-                    </Link>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {isAdminAssigned && (
+                            <button
+                                onClick={handleRevoke}
+                                disabled={revoking}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-[14px] text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                <RotateCcw size={16} />
+                                {revoking ? 'Revoking…' : 'Revoke Assignment'}
+                            </button>
+                        )}
+                        <button
+                            onClick={() => setShowAssignModal(true)}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-[14px] text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95"
+                            style={{ background: 'linear-gradient(135deg, #8c00ff 0%, #7c3aed 100%)' }}
+                        >
+                            <Gift size={16} /> Assign Plan
+                        </button>
+                        <Link
+                            href={`/admin/subscriptions/${user_id}/edit`}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-[14px] text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 transition-all active:scale-95"
+                        >
+                            <Edit2 size={16} /> Edit Usage
+                        </Link>
+                    </div>
                 </div>
+
+                {/* Admin Assignment Info Card */}
+                <AnimatePresence>
+                    {isAdminAssigned && data.active_assignment && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            className="p-5 rounded-3xl border border-violet-200 bg-violet-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="p-2.5 rounded-xl bg-violet-100 text-violet-600 shrink-0">
+                                    <Gift size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-[14px] font-bold text-violet-900">Admin-Assigned Subscription</p>
+                                    <p className="text-[12px] text-violet-600 mt-0.5">
+                                        {fmt(data.active_assignment.start_date)} → {fmt(data.active_assignment.end_date)}
+                                        {data.active_assignment.notes && ` · ${data.active_assignment.notes}`}
+                                    </p>
+                                </div>
+                            </div>
+                            {days !== null && (
+                                <div className={`px-4 py-2 rounded-xl text-center shrink-0 ${days <= 7 ? 'bg-red-100 text-red-700' : days <= 30 ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'}`}>
+                                    <p className="text-[22px] font-black leading-none">{days}</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider mt-0.5">days left</p>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Usage Stat Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -230,6 +317,17 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ u
                     </div>
                 </div>
             </div>
+
+            <AnimatePresence>
+                {showAssignModal && (
+                    <AssignPlanModal
+                        userId={user_id}
+                        userEmail={data.user_email}
+                        onClose={() => setShowAssignModal(false)}
+                        onSuccess={fetchDetail}
+                    />
+                )}
+            </AnimatePresence>
         </AdminLayout>
     );
 }

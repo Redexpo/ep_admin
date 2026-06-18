@@ -8,7 +8,7 @@ import {
     LayoutDashboard, Users, Video, AlertCircle, BarChart3,
     HardDrive, Layers, Shield, Globe, Settings, Search,
     Bell, ChevronDown, LogOut, ScrollText, Repeat, Receipt,
-    PanelLeftClose, PanelLeftOpen, Building2, FolderOpen, MessageSquare, Briefcase, Camera, MessageCircle, FileText, Landmark, Package, Tag, Webhook,
+    PanelLeftClose, PanelLeftOpen, Building2, FolderOpen, MessageSquare, Briefcase, Camera, MessageCircle, FileText, Landmark, Package, Tag, Webhook, Gift,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import AuthGuard from '@/components/auth/AuthGuard';
@@ -44,9 +44,10 @@ const navGroups: {
     {
         label: 'Revenue',
         items: [
-            { name: 'Plans & Pricing',  path: '/admin/plans',          icon: Layers,   countKey: 'plans'         },
-            { name: 'Subscriptions',    path: '/admin/subscriptions',  icon: Repeat,   countKey: 'subscriptions' },
-            { name: 'Payments',         path: '/admin/payments',       icon: Receipt,  countKey: 'payments'      },
+            { name: 'Plans & Pricing',  path: '/admin/plans',                         icon: Layers,   countKey: 'plans'         },
+            { name: 'Subscriptions',    path: '/admin/subscriptions',                 icon: Repeat,   countKey: 'subscriptions' },
+            { name: 'Assignments',      path: '/admin/subscriptions/assignments',     icon: Gift                                },
+            { name: 'Payments',         path: '/admin/payments',                      icon: Receipt,  countKey: 'payments'      },
             { name: 'Gateway',          path: '/admin/gateway',                   icon: Landmark },
             { name: 'G. Products',      path: '/admin/gateway/products',          icon: Package  },
             { name: 'G. Prices',        path: '/admin/gateway/prices',            icon: Tag      },
@@ -94,8 +95,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         fetchNavCounts().then(setNavCounts).catch(() => {});
     }, []);
 
-    const isActive = (path: string) =>
-        path === '/admin' ? pathname === '/admin' : pathname.startsWith(path);
+    const allNavPaths = navGroups.flatMap(g => g.items.map(i => i.path));
+    const isActive = (path: string) => {
+        if (path === '/admin') return pathname === '/admin';
+        if (!pathname.startsWith(path)) return false;
+        // Defer to a more-specific nav item when one matches
+        return !allNavPaths.some(p => p !== path && p.startsWith(path + '/') && pathname.startsWith(p));
+    };
 
     const initials = user
         ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase() || 'A'
@@ -359,7 +365,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 function Breadcrumb({ pathname }: { pathname: string }) {
     const crumbMap: Record<string, string> = {
         admin: 'Dashboard', users: 'Users', videos: 'Videos',
-        plans: 'Plans & Pricing', subscriptions: 'Subscriptions',
+        plans: 'Plans & Pricing', subscriptions: 'Subscriptions', assignments: 'Assignments',
         payments: 'Payments', reports: 'Reports', analytics: 'Analytics',
         storage: 'Storage', admins: 'Admins', ips: 'IP Whitelist',
         logs: 'Logs', settings: 'Settings', edit: 'Edit',
