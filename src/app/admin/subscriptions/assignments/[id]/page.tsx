@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
+import RevokeAssignmentModal from '@/components/admin/RevokeAssignmentModal';
 import { adminSubscriptionService, AssignmentDetail } from '@/services/admin/subscriptionService';
 import { toast } from 'sonner';
 
@@ -19,7 +20,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [data, setData] = useState<AssignmentDetail | null>(null);
-    const [revoking, setRevoking] = useState(false);
+    const [showRevokeModal, setShowRevokeModal] = useState(false);
 
     const fetchDetail = useCallback(async () => {
         try {
@@ -36,20 +37,11 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
 
     useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
-    const handleRevoke = async () => {
+    const handleRevoke = async (notes: string) => {
         if (!data) return;
-        if (!confirm('Revoke this assignment? The user will be downgraded to the free plan immediately.')) return;
-        try {
-            setRevoking(true);
-            await adminSubscriptionService.revokeAssignment(data.id, { notes: 'Revoked from admin panel' });
-            toast.success('Assignment revoked — user downgraded to free plan');
-            fetchDetail();
-        } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Failed to revoke';
-            toast.error(msg);
-        } finally {
-            setRevoking(false);
-        }
+        await adminSubscriptionService.revokeAssignment(data.id, { notes });
+        toast.success('Assignment revoked — user downgraded to free plan');
+        fetchDetail();
     };
 
     const statusConfig: Record<string, { label: string; classes: string; icon: React.ReactNode }> = {
@@ -166,12 +158,11 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
                         )}
                         {data.status === 'active' && (
                             <button
-                                onClick={handleRevoke}
-                                disabled={revoking}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-[13px] text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-all active:scale-95 disabled:opacity-50"
+                                onClick={() => setShowRevokeModal(true)}
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-[13px] text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-all active:scale-95"
                             >
                                 <RotateCcw size={14} />
-                                {revoking ? 'Revoking…' : 'Revoke Assignment'}
+                                Revoke Assignment
                             </button>
                         )}
                     </div>
@@ -348,6 +339,12 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
                     </div>
                 </div>
             </div>
+            <RevokeAssignmentModal
+                isOpen={showRevokeModal}
+                onClose={() => setShowRevokeModal(false)}
+                onConfirm={handleRevoke}
+                userInfo={data?.user_email ?? data?.user_id}
+            />
         </AdminLayout>
     );
 }

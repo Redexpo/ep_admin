@@ -5,6 +5,7 @@ import { Gift, CheckCircle2, XCircle, Clock, ChevronLeft, ChevronRight, RotateCc
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
+import RevokeAssignmentModal from '@/components/admin/RevokeAssignmentModal';
 import { adminSubscriptionService, AssignmentRecord } from '@/services/admin/subscriptionService';
 import { toast } from 'sonner';
 
@@ -16,7 +17,7 @@ export default function AssignmentsPage() {
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [revokingId, setRevokingId] = useState<string | null>(null);
+    const [revokeTarget, setRevokeTarget] = useState<AssignmentRecord | null>(null);
 
     const fetchAssignments = useCallback(async () => {
         try {
@@ -33,19 +34,11 @@ export default function AssignmentsPage() {
 
     useEffect(() => { fetchAssignments(); }, [fetchAssignments]);
 
-    const handleRevoke = async (assignment: AssignmentRecord) => {
-        if (!confirm(`Revoke assignment for user ${assignment.user_id}? They will be downgraded to the free plan immediately.`)) return;
-        try {
-            setRevokingId(assignment.id);
-            await adminSubscriptionService.revokeAssignment(assignment.id, { notes: 'Revoked from admin panel' });
-            toast.success('Assignment revoked');
-            fetchAssignments();
-        } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Failed to revoke assignment';
-            toast.error(msg);
-        } finally {
-            setRevokingId(null);
-        }
+    const handleRevoke = async (notes: string) => {
+        if (!revokeTarget) return;
+        await adminSubscriptionService.revokeAssignment(revokeTarget.id, { notes });
+        toast.success('Assignment revoked');
+        fetchAssignments();
     };
 
     const statusConfig: Record<string, { label: string; classes: string; icon: React.ReactNode }> = {
@@ -167,12 +160,11 @@ export default function AssignmentsPage() {
                                         <div>
                                             {a.status === 'active' ? (
                                                 <button
-                                                    onClick={() => handleRevoke(a)}
-                                                    disabled={revokingId === a.id}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-all disabled:opacity-50"
+                                                    onClick={() => setRevokeTarget(a)}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-all"
                                                 >
                                                     <RotateCcw size={11} />
-                                                    {revokingId === a.id ? '…' : 'Revoke'}
+                                                    Revoke
                                                 </button>
                                             ) : (
                                                 <span className="text-[11px] text-slate-300 font-medium">—</span>
@@ -211,6 +203,12 @@ export default function AssignmentsPage() {
                     </div>
                 )}
             </div>
+            <RevokeAssignmentModal
+                isOpen={!!revokeTarget}
+                onClose={() => setRevokeTarget(null)}
+                onConfirm={handleRevoke}
+                userInfo={revokeTarget?.user_id}
+            />
         </AdminLayout>
     );
 }
