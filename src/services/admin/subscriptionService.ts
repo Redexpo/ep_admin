@@ -107,6 +107,14 @@ export interface AssignmentRecord {
     updated_at: string;
 }
 
+export interface AssignmentDetail extends AssignmentRecord {
+    user_email: string;
+    user_name?: string;
+    assigned_by_admin_email?: string;
+    assigned_by_admin_name?: string;
+    subscription_status?: string;
+}
+
 export interface SubscriptionUpdate {
     plan_id?: string;
     status?: string;
@@ -219,6 +227,11 @@ export const adminSubscriptionService = {
     },
 
     // Assignment Management
+    async getAssignmentDetail(assignmentId: string): Promise<AssignmentDetail> {
+        const response = await api.get(`/api/v1/admin/subscriptions/assignments/${assignmentId}`);
+        return response.data;
+    },
+
     async assignPlan(data: AdminAssignPlanRequest): Promise<AssignmentRecord> {
         const response = await api.post("/api/v1/admin/subscriptions/assign", data);
         return response.data;

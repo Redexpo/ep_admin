@@ -137,7 +137,7 @@ export default function AssignmentsPage() {
                                         className="grid grid-cols-[1fr_1fr_100px_120px_120px_100px_100px_120px] gap-4 px-6 py-4 items-center hover:bg-slate-50 transition-colors"
                                     >
                                         {/* User */}
-                                        <Link href={`/admin/subscriptions/${a.user_id}`} className="text-[13px] font-semibold text-[#8c00ff] hover:underline truncate">
+                                        <Link href={`/admin/subscriptions/assignments/${a.id}`} className="text-[13px] font-semibold text-[#8c00ff] hover:underline truncate">
                                             {a.user_id.slice(-8)}
                                         </Link>
 
