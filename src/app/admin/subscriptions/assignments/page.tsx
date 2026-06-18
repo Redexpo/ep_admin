@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Gift, CheckCircle2, XCircle, Clock, ChevronLeft, ChevronRight, RotateCcw, RefreshCw, Filter } from 'lucide-react';
+import { Gift, CheckCircle2, XCircle, Clock, ChevronLeft, ChevronRight, RefreshCw, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import AdminLayout from '@/components/admin/AdminLayout';
-import RevokeAssignmentModal from '@/components/admin/RevokeAssignmentModal';
 import { adminSubscriptionService, AssignmentRecord } from '@/services/admin/subscriptionService';
 import { toast } from 'sonner';
 
@@ -17,7 +16,6 @@ export default function AssignmentsPage() {
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [revokeTarget, setRevokeTarget] = useState<AssignmentRecord | null>(null);
 
     const fetchAssignments = useCallback(async () => {
         try {
@@ -34,12 +32,6 @@ export default function AssignmentsPage() {
 
     useEffect(() => { fetchAssignments(); }, [fetchAssignments]);
 
-    const handleRevoke = async (notes: string) => {
-        if (!revokeTarget) return;
-        await adminSubscriptionService.revokeAssignment(revokeTarget.id, { notes });
-        toast.success('Assignment revoked');
-        fetchAssignments();
-    };
 
     const statusConfig: Record<string, { label: string; classes: string; icon: React.ReactNode }> = {
         active:   { label: 'Active',   classes: 'bg-green-50 text-green-700 border-green-200',     icon: <CheckCircle2 size={11} /> },
@@ -158,17 +150,12 @@ export default function AssignmentsPage() {
 
                                         {/* Actions */}
                                         <div>
-                                            {a.status === 'active' ? (
-                                                <button
-                                                    onClick={() => setRevokeTarget(a)}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-all"
-                                                >
-                                                    <RotateCcw size={11} />
-                                                    Revoke
-                                                </button>
-                                            ) : (
-                                                <span className="text-[11px] text-slate-300 font-medium">—</span>
-                                            )}
+                                            <Link
+                                                href={`/admin/subscriptions/assignments/${a.id}`}
+                                                className="text-[11px] font-bold text-[#8c00ff] hover:underline"
+                                            >
+                                                View
+                                            </Link>
                                         </div>
                                     </motion.div>
                                 );
@@ -203,12 +190,6 @@ export default function AssignmentsPage() {
                     </div>
                 )}
             </div>
-            <RevokeAssignmentModal
-                isOpen={!!revokeTarget}
-                onClose={() => setRevokeTarget(null)}
-                onConfirm={handleRevoke}
-                userInfo={revokeTarget?.user_id}
-            />
         </AdminLayout>
     );
 }

@@ -53,6 +53,12 @@ export interface AdminSubscriptionDetail {
     assigned_by_admin_id?: string;
     assignment_notes?: string;
     active_assignment?: AssignmentRecord | null;
+    cancellation?: {
+        internal_notes: string;
+        user_message: string | null;
+        cancelled_by_admin_id: string;
+        cancelled_at: string;
+    } | null;
     created_at: string;
     updated_at: string;
 }
@@ -254,5 +260,9 @@ export const adminSubscriptionService = {
     async getUserAssignments(subscriptionId: string): Promise<AssignmentRecord[]> {
         const response = await api.get(`/api/v1/admin/subscriptions/${subscriptionId}/assignments`);
         return response.data;
+    },
+
+    async cancelSubscription(subscriptionId: string, data: { internal_notes: string; user_message?: string }): Promise<void> {
+        await api.post(`/api/v1/admin/subscriptions/${subscriptionId}/cancel`, data);
     },
 };

@@ -5,14 +5,14 @@ import {
     ArrowLeft, CheckCircle2, XCircle, AlertCircle, Clock,
     CreditCard, Users, Calendar, Zap, Download, GitBranch,
     Wand2, User, Tag, Shield, Edit2, RefreshCw, Image as ImageIcon, Lock, Sparkles, Video,
-    Gift, RotateCcw
+    Gift, Ban
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AssignPlanModal from '@/components/admin/AssignPlanModal';
-import RevokeAssignmentModal from '@/components/admin/RevokeAssignmentModal';
+import CancelSubscriptionModal from '@/components/admin/CancelSubscriptionModal';
 import { adminSubscriptionService, AdminSubscriptionDetail } from '@/services/admin/subscriptionService';
 import { toast } from 'sonner';
 
@@ -21,8 +21,8 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [data, setData] = useState<AdminSubscriptionDetail | null>(null);
-    const [showAssignModal, setShowAssignModal] = useState(false);
-    const [showRevokeModal, setShowRevokeModal] = useState(false);
+    const [showAssignModal, setShowAssignModal]   = useState(false);
+    const [showCancelModal, setShowCancelModal]   = useState(false);
 
     const fetchDetail = useCallback(async () => {
         try {
@@ -39,10 +39,12 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
 
     useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
-    const handleRevoke = async (notes: string) => {
-        if (!data?.active_assignment) return;
-        await adminSubscriptionService.revokeAssignment(data.active_assignment.id, { notes });
-        toast.success('Assignment revoked — user downgraded to free plan');
+    const handleCancel = async (internalNotes: string, userMessage: string) => {
+        await adminSubscriptionService.cancelSubscription(id, {
+            internal_notes: internalNotes,
+            user_message: userMessage || undefined,
+        });
+        toast.success('Subscription cancelled — user downgraded to free plan');
         fetchDetail();
     };
 
@@ -160,13 +162,13 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                                 <Gift size={16} /> View Assignment
                             </Link>
                         )}
-                        {isAdminAssigned && (
+                        {data.status === 'active' && (
                             <button
-                                onClick={() => setShowRevokeModal(true)}
+                                onClick={() => setShowCancelModal(true)}
                                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-[14px] text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-all active:scale-95"
                             >
-                                <RotateCcw size={16} />
-                                Revoke Assignment
+                                <Ban size={16} />
+                                Cancel Subscription
                             </button>
                         )}
                         <button
@@ -215,6 +217,29 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                {/* Cancellation Record */}
+                {data.cancellation && (
+                    <div className="p-5 rounded-3xl border border-red-200 bg-red-50/60 space-y-3">
+                        <p className="text-[11px] font-bold text-red-600 uppercase tracking-widest">Cancellation Record</p>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                            <div>
+                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Internal Reason</p>
+                                <p className="text-[13px] text-red-700 font-medium">{data.cancellation.internal_notes}</p>
+                            </div>
+                            {data.cancellation.user_message && (
+                                <div>
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">User Message</p>
+                                    <p className="text-[13px] text-red-700 font-medium">{data.cancellation.user_message}</p>
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-[11px] text-slate-400">
+                            Cancelled on {new Date(data.cancellation.cancelled_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            {' '}· by admin <span className="font-mono">{data.cancellation.cancelled_by_admin_id.slice(-8)}</span>
+                        </p>
+                    </div>
+                )}
 
                 {/* Usage Stat Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -327,11 +352,12 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                     />
                 )}
             </AnimatePresence>
-            <RevokeAssignmentModal
-                isOpen={showRevokeModal}
-                onClose={() => setShowRevokeModal(false)}
-                onConfirm={handleRevoke}
+            <CancelSubscriptionModal
+                isOpen={showCancelModal}
+                onClose={() => setShowCancelModal(false)}
+                onConfirm={handleCancel}
                 userInfo={data?.user_email}
+                planName={data?.plan_name}
             />
         </AdminLayout>
     );

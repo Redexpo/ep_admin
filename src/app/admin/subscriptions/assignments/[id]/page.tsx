@@ -5,13 +5,12 @@ import {
     ArrowLeft, Gift, CheckCircle2, XCircle, Clock, RefreshCw,
     Calendar, Users, StickyNote, User, Shield, ExternalLink,
     Download, GitBranch, Wand2, Image as ImageIcon, Lock,
-    Sparkles, Zap, Video, RotateCcw, Infinity
+    Sparkles, Zap, Video, Ban, Infinity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
-import RevokeAssignmentModal from '@/components/admin/RevokeAssignmentModal';
 import { adminSubscriptionService, AssignmentDetail } from '@/services/admin/subscriptionService';
 import { toast } from 'sonner';
 
@@ -20,7 +19,6 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [data, setData] = useState<AssignmentDetail | null>(null);
-    const [showRevokeModal, setShowRevokeModal] = useState(false);
 
     const fetchDetail = useCallback(async () => {
         try {
@@ -37,12 +35,6 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
 
     useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
-    const handleRevoke = async (notes: string) => {
-        if (!data) return;
-        await adminSubscriptionService.revokeAssignment(data.id, { notes });
-        toast.success('Assignment revoked — user downgraded to free plan');
-        fetchDetail();
-    };
 
     const statusConfig: Record<string, { label: string; classes: string; icon: React.ReactNode }> = {
         active:   { label: 'Active',   classes: 'bg-green-50 text-green-700 border-green-200',    icon: <CheckCircle2 size={13} /> },
@@ -156,14 +148,14 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
                                 <ExternalLink size={14} /> View Subscription
                             </Link>
                         )}
-                        {data.status === 'active' && (
-                            <button
-                                onClick={() => setShowRevokeModal(true)}
+                        {data.status === 'active' && data.user_subscription_id && (
+                            <Link
+                                href={`/admin/subscriptions/${data.user_subscription_id}`}
                                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-[13px] text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 transition-all active:scale-95"
                             >
-                                <RotateCcw size={14} />
-                                Revoke Assignment
-                            </button>
+                                <Ban size={14} />
+                                Cancel Subscription
+                            </Link>
                         )}
                     </div>
                 </div>
@@ -339,12 +331,6 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
                     </div>
                 </div>
             </div>
-            <RevokeAssignmentModal
-                isOpen={showRevokeModal}
-                onClose={() => setShowRevokeModal(false)}
-                onConfirm={handleRevoke}
-                userInfo={data?.user_email ?? data?.user_id}
-            />
         </AdminLayout>
     );
 }
