@@ -160,6 +160,14 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                         </div>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
+                        {isAdminAssigned && data.active_assignment && (
+                            <Link
+                                href={`/admin/subscriptions/assignments/${data.active_assignment.id}`}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-[14px] text-violet-700 border border-violet-200 bg-violet-50 hover:bg-violet-100 transition-all active:scale-95"
+                            >
+                                <Gift size={16} /> View Assignment
+                            </Link>
+                        )}
                         {isAdminAssigned && (
                             <button
                                 onClick={handleRevoke}
