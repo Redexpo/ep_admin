@@ -14,8 +14,8 @@ import {
 } from '@/services/admin/subscriptionService';
 import { toast } from 'sonner';
 
-export default function EditSubscriptionPage({ params }: { params: Promise<{ user_id: string }> }) {
-    const { user_id } = use(params);
+export default function EditSubscriptionPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -25,7 +25,7 @@ export default function EditSubscriptionPage({ params }: { params: Promise<{ use
     const fetchDetail = useCallback(async () => {
         try {
             setIsLoading(true);
-            const data = await adminSubscriptionService.getSubscriptionDetail(user_id);
+            const data = await adminSubscriptionService.getSubscriptionDetail(id);
             setSub(data);
             setForm({
                 recordings_used:            data.recordings_used,
@@ -55,16 +55,16 @@ export default function EditSubscriptionPage({ params }: { params: Promise<{ use
         } finally {
             setIsLoading(false);
         }
-    }, [user_id]);
+    }, [id]);
 
     useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
     const handleSave = async () => {
         try {
             setIsSaving(true);
-            await adminSubscriptionService.overrideSubscriptionUsage(user_id, form);
+            await adminSubscriptionService.overrideSubscriptionUsage(id, form);
             toast.success('Subscription updated');
-            router.push(`/admin/subscriptions/${user_id}`);
+            router.push(`/admin/subscriptions/${id}`);
         } catch (error) {
             const msg = error instanceof Error ? error.message : 'Failed to save changes';
             toast.error(msg);
@@ -193,7 +193,7 @@ export default function EditSubscriptionPage({ params }: { params: Promise<{ use
                 {/* Header */}
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => router.push(`/admin/subscriptions/${user_id}`)}
+                        onClick={() => router.push(`/admin/subscriptions/${id}`)}
                         className="p-3 rounded-2xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all active:scale-90"
                     >
                         <ArrowLeft size={20} />
@@ -256,7 +256,6 @@ export default function EditSubscriptionPage({ params }: { params: Promise<{ use
                         <p className="text-[12px] text-slate-400 mt-1">Enable or disable specific features for this user independently of their plan.</p>
                     </div>
 
-                    {/* Video Quality select — sits above the toggles */}
                     <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex items-center gap-6">
                         <div className="flex items-center gap-2 shrink-0">
                             <Monitor size={16} className="text-slate-400" />
@@ -296,7 +295,7 @@ export default function EditSubscriptionPage({ params }: { params: Promise<{ use
                     </p>
                     <div className="flex items-center gap-3 ml-auto">
                         <button
-                            onClick={() => router.push(`/admin/subscriptions/${user_id}`)}
+                            onClick={() => router.push(`/admin/subscriptions/${id}`)}
                             className="px-6 py-2.5 rounded-xl font-bold text-[14px] text-slate-600 hover:bg-slate-100 transition-all active:scale-95"
                         >
                             Cancel

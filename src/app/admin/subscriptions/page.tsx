@@ -203,14 +203,14 @@ export default function SubscriptionsPage() {
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center justify-end gap-1">
                                                         <Link
-                                                            href={`/admin/subscriptions/${sub.user_id}`}
+                                                            href={`/admin/subscriptions/${sub.id}`}
                                                             className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-purple-50 hover:text-[#8c00ff] transition-all"
                                                             title="View details"
                                                         >
                                                             <Eye size={15} />
                                                         </Link>
                                                         <Link
-                                                            href={`/admin/subscriptions/${sub.user_id}/edit`}
+                                                            href={`/admin/subscriptions/${sub.id}/edit`}
                                                             className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all"
                                                             title="Edit usage & entitlements"
                                                         >

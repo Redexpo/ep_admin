@@ -190,17 +190,17 @@ export const adminSubscriptionService = {
         return response.data;
     },
 
-    async getSubscriptionDetail(userId: string): Promise<AdminSubscriptionDetail> {
-        const response = await api.get(`/api/v1/admin/subscriptions/${userId}`);
+    async getSubscriptionDetail(subscriptionId: string): Promise<AdminSubscriptionDetail> {
+        const response = await api.get(`/api/v1/admin/subscriptions/${subscriptionId}`);
         return response.data;
     },
 
-    async updateSubscription(userId: string, data: SubscriptionUpdate): Promise<void> {
-        await api.patch(`/api/v1/admin/subscriptions/${userId}`, data);
+    async updateSubscription(subscriptionId: string, data: SubscriptionUpdate): Promise<void> {
+        await api.patch(`/api/v1/admin/subscriptions/${subscriptionId}`, data);
     },
 
-    async overrideSubscriptionUsage(userId: string, data: SubscriptionUsageOverride): Promise<void> {
-        await api.patch(`/api/v1/admin/subscriptions/${userId}/usage`, data);
+    async overrideSubscriptionUsage(subscriptionId: string, data: SubscriptionUsageOverride): Promise<void> {
+        await api.patch(`/api/v1/admin/subscriptions/${subscriptionId}/usage`, data);
     },
 
     // Payment Management
@@ -236,8 +236,8 @@ export const adminSubscriptionService = {
         return response.data;
     },
 
-    async getUserAssignments(userId: string): Promise<AssignmentRecord[]> {
-        const response = await api.get(`/api/v1/admin/subscriptions/${userId}/assignments`);
+    async getUserAssignments(subscriptionId: string): Promise<AssignmentRecord[]> {
+        const response = await api.get(`/api/v1/admin/subscriptions/${subscriptionId}/assignments`);
         return response.data;
     },
 };

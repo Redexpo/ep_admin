@@ -15,8 +15,8 @@ import AssignPlanModal from '@/components/admin/AssignPlanModal';
 import { adminSubscriptionService, AdminSubscriptionDetail } from '@/services/admin/subscriptionService';
 import { toast } from 'sonner';
 
-export default function SubscriptionDetailPage({ params }: { params: Promise<{ user_id: string }> }) {
-    const { user_id } = use(params);
+export default function SubscriptionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [data, setData] = useState<AdminSubscriptionDetail | null>(null);
@@ -26,7 +26,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ u
     const fetchDetail = useCallback(async () => {
         try {
             setIsLoading(true);
-            const res = await adminSubscriptionService.getSubscriptionDetail(user_id);
+            const res = await adminSubscriptionService.getSubscriptionDetail(id);
             setData(res);
         } catch (error) {
             const msg = error instanceof Error ? error.message : 'Failed to fetch subscription';
@@ -34,7 +34,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ u
         } finally {
             setIsLoading(false);
         }
-    }, [user_id]);
+    }, [id]);
 
     useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
@@ -178,7 +178,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ u
                             <Gift size={16} /> Assign Plan
                         </button>
                         <Link
-                            href={`/admin/subscriptions/${user_id}/edit`}
+                            href={`/admin/subscriptions/${id}/edit`}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-[14px] text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 transition-all active:scale-95"
                         >
                             <Edit2 size={16} /> Edit Usage
@@ -321,7 +321,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ u
             <AnimatePresence>
                 {showAssignModal && (
                     <AssignPlanModal
-                        userId={user_id}
+                        userId={data.user_id}
                         userEmail={data.user_email}
                         onClose={() => setShowAssignModal(false)}
                         onSuccess={fetchDetail}
