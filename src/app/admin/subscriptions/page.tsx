@@ -189,7 +189,9 @@ export default function SubscriptionsPage() {
                                                 </td>
                                                 {/* Plan */}
                                                 <td className="px-6 py-4">
-                                                    <span className="text-[13px] font-bold text-slate-800">{sub.plan_name}</span>
+                                                    <span className="inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-100">
+                                                        {sub.plan_name}
+                                                    </span>
                                                 </td>
                                                 {/* Status */}
                                                 <td className="px-6 py-4">
