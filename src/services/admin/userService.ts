@@ -15,6 +15,7 @@ export interface User {
     plan_name?: string | null;
     billing_model?: string | null;
     subscription_status?: string | null;
+    last_login?: string | null;
 }
 
 export interface UserListResponse {

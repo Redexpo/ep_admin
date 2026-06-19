@@ -194,6 +194,7 @@ export default function AdminUsersPage() {
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Auth</th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Videos</th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Joined</th>
+                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Last Login</th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider text-right">Actions</th>
                                 </tr>
@@ -202,7 +203,7 @@ export default function AdminUsersPage() {
                                 {isLoading ? (
                                     Array(5).fill(0).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td colSpan={7} className="px-6 py-4 h-[72px] bg-slate-50/10" />
+                                            <td colSpan={8} className="px-6 py-4 h-[72px] bg-slate-50/10" />
                                         </tr>
                                     ))
                                 ) : users.map((user) => {
@@ -273,6 +274,15 @@ export default function AdminUsersPage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className="text-[13px] text-[#64748B]">{formattedDate}</span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {user.last_login ? (
+                                                    <span className="text-[13px] text-[#64748B]">
+                                                        {new Date(user.last_login).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[13px] text-slate-300">—</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`inline-flex px-2 py-1 rounded-md text-[11px] font-bold uppercase ${status === 'active' || status === 'free' ? 'bg-green-50 text-green-600' :
