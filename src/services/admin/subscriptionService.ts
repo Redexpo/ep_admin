@@ -197,10 +197,11 @@ export interface AdminPaymentOrderDetail {
 
 
 export const adminSubscriptionService = {
-    async getSubscriptions(page: number = 1, limit: number = 20, status?: string, planId?: string): Promise<AdminSubscription[]> {
+    async getSubscriptions(page: number = 1, limit: number = 20, status?: string, planId?: string, search?: string): Promise<AdminSubscription[]> {
         const params: any = { page, limit };
-        if (status) params.status = status;
-        if (planId) params.plan_id = planId;
+        if (status)  params.status   = status;
+        if (planId)  params.plan_id  = planId;
+        if (search)  params.search   = search;
 
         const response = await api.get("/api/v1/admin/subscriptions", { params });
         return response.data;

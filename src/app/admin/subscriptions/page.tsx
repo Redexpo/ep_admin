@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Search, ChevronLeft, ChevronRight, Edit2, Eye,
     CheckCircle2, XCircle, AlertCircle, Clock, User, Users, RefreshCw, Gift
@@ -26,13 +26,25 @@ export default function SubscriptionsPage() {
     const [currentPage,    setCurrentPage]    = useState(1);
     const [statusFilter,   setStatusFilter]   = useState('all');
     const [searchQuery,    setSearchQuery]    = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    // Debounce search input — 500ms after user stops typing
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     const fetchSubscriptions = useCallback(async () => {
         try {
             setIsLoading(true);
             const data = await adminSubscriptionService.getSubscriptions(
                 currentPage, 20,
-                statusFilter === 'all' ? undefined : statusFilter
+                statusFilter === 'all' ? undefined : statusFilter,
+                undefined,
+                debouncedSearch || undefined,
             );
             setSubscriptions(data);
         } catch (error) {
@@ -40,25 +52,17 @@ export default function SubscriptionsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [currentPage, statusFilter]);
+    }, [currentPage, statusFilter, debouncedSearch]);
 
     useEffect(() => { fetchSubscriptions(); }, [fetchSubscriptions]);
 
-    const filtered = useMemo(() =>
-        subscriptions.filter(s =>
-            s.user_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.plan_name.toLowerCase().includes(searchQuery.toLowerCase())
-        ),
-        [subscriptions, searchQuery]
-    );
-
-    // Summary counts from current page data
-    const counts = useMemo(() => ({
+    // Summary counts from current page
+    const counts = {
         active:    subscriptions.filter(s => s.status === 'active').length,
         free:      subscriptions.filter(s => s.status === 'free').length,
         past_due:  subscriptions.filter(s => s.status === 'past_due').length,
         cancelled: subscriptions.filter(s => s.status === 'cancelled').length,
-    }), [subscriptions]);
+    };
 
     const FILTER_TABS = [
         { label: 'All',       value: 'all'       },
@@ -107,17 +111,20 @@ export default function SubscriptionsPage() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
                                 type="text"
-                                placeholder="Search email or plan..."
+                                placeholder="Search email, user ID, subscription ID…"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#8c00ff]/30 focus:border-[#8c00ff] transition-all"
                             />
+                            {searchQuery !== debouncedSearch && (
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2 border-[#8c00ff] border-t-transparent animate-spin" />
+                            )}
                         </div>
                         <div className="flex p-1 bg-slate-100 rounded-xl gap-0.5 overflow-x-auto no-scrollbar">
                             {FILTER_TABS.map(tab => (
                                 <button
                                     key={tab.value}
-                                    onClick={() => { setStatusFilter(tab.value); setCurrentPage(1); }}
+                                    onClick={() => { setStatusFilter(tab.value); setCurrentPage(1); setSearchQuery(''); setDebouncedSearch(''); }}
                                     className={`px-3.5 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap transition-all ${
                                         statusFilter === tab.value
                                             ? 'bg-white text-slate-900 shadow-sm'
@@ -154,7 +161,7 @@ export default function SubscriptionsPage() {
                                             </td>
                                         </tr>
                                     ))
-                                ) : filtered.length === 0 ? (
+                                ) : subscriptions.length === 0 ? (
                                     <tr>
                                         <td colSpan={8} className="px-6 py-24 text-center">
                                             <div className="flex flex-col items-center gap-3 text-slate-300">
@@ -164,7 +171,7 @@ export default function SubscriptionsPage() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    filtered.map((sub) => {
+                                    subscriptions.map((sub) => {
                                         const sc = STATUS_CONFIG[sub.status] ?? STATUS_CONFIG['free'];
                                         return (
                                             <tr key={sub.id} className="hover:bg-slate-50/60 transition-colors">
@@ -250,7 +257,8 @@ export default function SubscriptionsPage() {
                     {/* Pagination */}
                     <div className="px-6 py-4 border-t border-slate-50 flex items-center justify-between">
                         <p className="text-[12px] text-slate-500">
-                            Showing <span className="font-bold text-slate-900">{filtered.length}</span> subscriptions
+                            Showing <span className="font-bold text-slate-900">{subscriptions.length}</span> subscriptions
+                            {debouncedSearch && <span className="ml-1">for <span className="font-bold text-slate-700">&ldquo;{debouncedSearch}&rdquo;</span></span>}
                         </p>
                         <div className="flex items-center gap-2">
                             <button
