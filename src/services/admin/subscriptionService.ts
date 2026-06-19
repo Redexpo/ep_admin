@@ -207,6 +207,11 @@ export const adminSubscriptionService = {
         return response.data;
     },
 
+    async getUserSubscriptions(userId: string): Promise<AdminSubscription[]> {
+        const response = await api.get("/api/v1/admin/subscriptions", { params: { user_id: userId, limit: 50 } });
+        return response.data;
+    },
+
     async getSubscriptionDetail(subscriptionId: string): Promise<AdminSubscriptionDetail> {
         const response = await api.get(`/api/v1/admin/subscriptions/${subscriptionId}`);
         return response.data;

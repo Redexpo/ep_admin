@@ -30,10 +30,16 @@ import {
     Smartphone,
     Building2,
     LogIn,
+    CreditCard,
+    CheckCircle2,
+    XCircle,
+    AlertCircle,
+    RefreshCw,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AssignPlanModal from '@/components/admin/AssignPlanModal';
 import { userService, UserDetail, Recording, UserIP } from '@/services/admin/userService';
+import { adminSubscriptionService, AdminSubscription } from '@/services/admin/subscriptionService';
 import { toast } from 'sonner';
 
 export default function UserDetailPage() {
@@ -48,6 +54,8 @@ export default function UserDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRecordingsLoading, setIsRecordingsLoading] = useState(true);
     const [isIPsLoading, setIsIPsLoading] = useState(true);
+    const [subscriptions, setSubscriptions] = useState<AdminSubscription[]>([]);
+    const [isSubsLoading, setIsSubsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -103,10 +111,23 @@ export default function UserDetailPage() {
         }
     }, [userId]);
 
+    const fetchUserSubscriptions = useCallback(async () => {
+        try {
+            setIsSubsLoading(true);
+            const data = await adminSubscriptionService.getUserSubscriptions(userId);
+            setSubscriptions(data);
+        } catch {
+            // non-critical
+        } finally {
+            setIsSubsLoading(false);
+        }
+    }, [userId]);
+
     useEffect(() => {
         fetchUserData();
         fetchUserIPs();
-    }, [fetchUserData, fetchUserIPs]);
+        fetchUserSubscriptions();
+    }, [fetchUserData, fetchUserIPs, fetchUserSubscriptions]);
 
     useEffect(() => {
         fetchUserRecordings(currentPage);
@@ -329,6 +350,126 @@ export default function UserDetailPage() {
                         <p className="text-[14px] font-bold text-[#64748B] mb-1">Member Since</p>
                         <h3 className="text-[24px] font-black tracking-tight text-[#0F172A] mt-2">{formatDate(user.created_at)}</h3>
                         <p className="text-[12px] font-bold text-[#94A3B8] mt-2 capitalize">{user.auth_provider || 'Email'} registration</p>
+                    </div>
+                </div>
+
+                {/* Subscription History */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-[22px] font-black tracking-tight text-[#0F172A]">Subscription History</h2>
+                            {!isSubsLoading && (
+                                <span className="text-[12px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-xl">
+                                    {subscriptions.length} record{subscriptions.length !== 1 ? 's' : ''}
+                                </span>
+                            )}
+                        </div>
+                        <Link
+                            href={`/admin/subscriptions?search=${userId}`}
+                            className="flex items-center gap-1.5 text-[13px] font-bold text-[#8c00ff] hover:underline"
+                        >
+                            View all <ExternalLink size={13} />
+                        </Link>
+                    </div>
+
+                    <div className="bg-white rounded-[32px] border border-[#E2E8F0] shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-slate-50/60 border-b border-slate-100">
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Plan</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Billing</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Seats</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Source</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Period End</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Created</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {isSubsLoading ? (
+                                        Array(3).fill(0).map((_, i) => (
+                                            <tr key={i} className="animate-pulse">
+                                                <td className="px-6 py-4"><div className="h-4 w-24 bg-slate-100 rounded-full" /></td>
+                                                <td colSpan={7} className="px-6 py-4"><div className="h-4 bg-slate-100 rounded-lg" /></td>
+                                            </tr>
+                                        ))
+                                    ) : subscriptions.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={8} className="px-6 py-14 text-center">
+                                                <CreditCard size={32} className="mx-auto text-slate-200 mb-3" />
+                                                <p className="text-[13px] text-slate-400 font-medium">No subscription records found</p>
+                                            </td>
+                                        </tr>
+                                    ) : subscriptions.map((sub) => {
+                                        const STATUS_CONFIG: Record<string, { icon: React.ReactNode; chip: string }> = {
+                                            active:    { icon: <CheckCircle2 size={11} />, chip: 'bg-green-50  text-green-700  border border-green-100'  },
+                                            cancelled: { icon: <XCircle      size={11} />, chip: 'bg-red-50    text-red-700    border border-red-100'    },
+                                            past_due:  { icon: <AlertCircle  size={11} />, chip: 'bg-amber-50  text-amber-700  border border-amber-100'  },
+                                            trialing:  { icon: <Clock        size={11} />, chip: 'bg-blue-50   text-blue-700   border border-blue-100'   },
+                                            free:      { icon: <CheckCircle2 size={11} />, chip: 'bg-slate-100 text-slate-600  border border-slate-200'  },
+                                            expired:   { icon: <Clock        size={11} />, chip: 'bg-slate-100 text-slate-500  border border-slate-200'  },
+                                            replaced:  { icon: <RefreshCw    size={11} />, chip: 'bg-purple-50 text-purple-600 border border-purple-100' },
+                                        };
+                                        const cfg = STATUS_CONFIG[sub.status] ?? { icon: null, chip: 'bg-slate-100 text-slate-500 border border-slate-200' };
+                                        const isActive = sub.status === 'active';
+                                        return (
+                                            <tr key={sub.id} className={`transition-colors ${isActive ? 'bg-[#f9f5ff]' : 'hover:bg-slate-50/60'}`}>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2.5">
+                                                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#8c00ff] animate-pulse shrink-0" />}
+                                                        <span className="text-[13px] font-bold text-[#0F172A]">{sub.plan_name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold capitalize ${cfg.chip}`}>
+                                                        {cfg.icon}
+                                                        {sub.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[12px] font-semibold text-slate-600 capitalize">{sub.billing_cycle}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[13px] font-bold text-[#0F172A]">{sub.seats}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md capitalize ${
+                                                        sub.subscription_source === 'admin_assigned'
+                                                            ? 'bg-[#f3eefe] text-[#8c00ff]'
+                                                            : 'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                        {sub.subscription_source.replace(/_/g, ' ')}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[11px] text-slate-500 whitespace-nowrap">
+                                                        {sub.current_period_end
+                                                            ? new Date(sub.current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                                            : '-'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[11px] text-slate-500 whitespace-nowrap">
+                                                        {new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <Link
+                                                        href={`/admin/subscriptions?search=${sub.id}`}
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-white hover:shadow-sm border border-[#E2E8F0] text-[11px] font-bold text-[#64748B] hover:text-[#0F172A] transition-all"
+                                                    >
+                                                        <Eye size={12} />
+                                                        Detail
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
