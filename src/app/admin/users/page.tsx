@@ -4,13 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
     Search,
-    Filter,
     Download,
     MoreVertical,
     Eye,
-    Ban,
-    Trash2,
-    Key,
     ChevronLeft,
     ChevronRight,
     TrendingUp,
@@ -26,6 +22,8 @@ export default function AdminUsersPage() {
     const [isDarkMode] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedFilter, setSelectedFilter] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [pagination, setPagination] = useState({
@@ -36,20 +34,33 @@ export default function AdminUsersPage() {
     });
     const [stats, setStats] = useState<UserStats | null>(null);
 
-    const fetchUsers = useCallback(async (page: number) => {
+    // Debounce search — 500ms after user stops typing
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setCurrentPage(1);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const fetchUsers = useCallback(async () => {
         try {
             setIsLoading(true);
-            const response = await userService.getUsers(page, 10);
+            const response = await userService.getUsers(
+                currentPage, 10,
+                debouncedSearch || undefined,
+                selectedFilter !== 'all' ? selectedFilter : undefined,
+            );
             if (response.data) {
                 setUsers(response.data.results);
                 setPagination(response.data.pagination);
             }
-        } catch (error: any) {
-            toast.error(error.message || "Failed to fetch users");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Failed to fetch users');
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [currentPage, selectedFilter, debouncedSearch]);
 
     const fetchStats = useCallback(async () => {
         try {
@@ -57,14 +68,12 @@ export default function AdminUsersPage() {
             if (response.data) {
                 setStats(response.data);
             }
-        } catch (error: any) {
-            toast.error(error.message || "Failed to fetch stats");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : 'Failed to fetch stats');
         }
     }, []);
 
-    useEffect(() => {
-        fetchUsers(currentPage);
-    }, [fetchUsers, currentPage]);
+    useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
     useEffect(() => {
         fetchStats();
@@ -149,16 +158,21 @@ export default function AdminUsersPage() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                             <input
                                 type="text"
-                                placeholder="Search by name or email..."
-                                className="w-full pl-10 pr-4 py-2 rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#8c00ff] focus:border-transparent transition-all"
+                                placeholder="Search by name, email, or user ID…"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-10 py-2 rounded-xl border border-[#E2E8F0] focus:outline-none focus:ring-2 focus:ring-[#8c00ff] focus:border-transparent transition-all"
                             />
+                            {searchQuery !== debouncedSearch && (
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2 border-[#8c00ff] border-t-transparent animate-spin" />
+                            )}
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="flex p-1 bg-slate-100 rounded-xl">
                                 {['All', 'Active', 'Pending'].map((filter) => (
                                     <button
                                         key={filter}
-                                        onClick={() => setSelectedFilter(filter.toLowerCase())}
+                                        onClick={() => { setSelectedFilter(filter.toLowerCase()); setCurrentPage(1); setSearchQuery(''); setDebouncedSearch(''); }}
                                         className={`px-4 py-1.5 rounded-lg text-[13px] font-bold transition-all ${selectedFilter === filter.toLowerCase()
                                             ? 'bg-white text-[#0F172A] shadow-sm'
                                             : 'text-[#64748B] hover:text-[#0F172A]'
@@ -168,9 +182,6 @@ export default function AdminUsersPage() {
                                     </button>
                                 ))}
                             </div>
-                            <button className="p-2 rounded-xl border border-[#E2E8F0] hover:bg-slate-50 transition-all text-slate-600">
-                                <Filter size={20} />
-                            </button>
                         </div>
                     </div>
 
@@ -290,7 +301,9 @@ export default function AdminUsersPage() {
                     {/* Pagination */}
                     <div className="p-6 border-t border-[#F1F5F9] flex items-center justify-between">
                         <p className="text-[13px] text-[#64748B]">
-                            Page <span className="font-bold text-[#0F172A]">{currentPage}</span> of {pagination.total_pages}
+                            <span className="font-bold text-[#0F172A]">{pagination.total.toLocaleString()}</span> users
+                            {debouncedSearch && <span className="ml-1">for <span className="font-bold text-slate-700">&ldquo;{debouncedSearch}&rdquo;</span></span>}
+                            {' · '}Page <span className="font-bold text-[#0F172A]">{currentPage}</span> of {pagination.total_pages}
                         </p>
                         <div className="flex items-center gap-2">
                             <button

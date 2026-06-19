@@ -92,8 +92,11 @@ export interface UserStats {
 }
 
 export const userService = {
-    getUsers: async (page: number = 1, perPage: number = 10): Promise<UserListResponse> => {
-        const response = await api.get(`/api/v1/admin/users?page=${page}&per_page=${perPage}`);
+    getUsers: async (page: number = 1, perPage: number = 10, search?: string, status?: string): Promise<UserListResponse> => {
+        const params: Record<string, unknown> = { page, per_page: perPage };
+        if (search)  params.search = search;
+        if (status && status !== 'all') params.status = status;
+        const response = await api.get('/api/v1/admin/users', { params });
         return response.data;
     },
     getUserStats: async (): Promise<{ data: UserStats }> => {
