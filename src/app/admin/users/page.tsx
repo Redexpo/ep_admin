@@ -247,20 +247,29 @@ export default function AdminUsersPage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 {user.plan_name ? (
-                                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide ${
-                                                        user.billing_model === 'custom'
-                                                            ? 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200'
-                                                            : user.billing_model === 'flat_team'
-                                                            ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200'
-                                                            : user.billing_model === 'per_user'
-                                                            ? 'bg-purple-100 text-purple-700 ring-1 ring-purple-200'
-                                                            : 'bg-slate-100 text-slate-600 ring-1 ring-slate-200'
-                                                    }`}>
-                                                        {user.plan_name}
-                                                    </span>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className={`inline-flex w-fit px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                                                            user.subscription_status === 'active'
+                                                                ? 'bg-purple-50 text-purple-700 border-purple-100'
+                                                                : user.subscription_status === 'trialing'
+                                                                ? 'bg-blue-50 text-blue-700 border-blue-100'
+                                                                : user.subscription_status === 'past_due'
+                                                                ? 'bg-amber-50 text-amber-700 border-amber-100'
+                                                                : user.subscription_status === 'cancelled'
+                                                                ? 'bg-red-50 text-red-600 border-red-100'
+                                                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                                                        }`}>
+                                                            {user.plan_name}
+                                                        </span>
+                                                        {user.billing_model && user.billing_model !== 'free' && (
+                                                            <span className="inline-flex w-fit px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200 capitalize">
+                                                                {user.billing_model.replace('_', ' ')}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-50 text-red-400 ring-1 ring-red-100">
-                                                        No Plan
+                                                    <span className="inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-400 border border-slate-200">
+                                                        Free
                                                     </span>
                                                 )}
                                             </td>
