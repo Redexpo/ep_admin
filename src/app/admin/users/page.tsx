@@ -250,13 +250,15 @@ export default function AdminUsersPage() {
                                                     <div className="flex flex-col gap-1">
                                                         <span className={`inline-flex w-fit px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
                                                             user.subscription_status === 'active'
-                                                                ? 'bg-purple-50 text-purple-700 border-purple-100'
+                                                                ? 'bg-green-50 text-green-700 border-green-100'
                                                                 : user.subscription_status === 'trialing'
                                                                 ? 'bg-blue-50 text-blue-700 border-blue-100'
                                                                 : user.subscription_status === 'past_due'
                                                                 ? 'bg-amber-50 text-amber-700 border-amber-100'
                                                                 : user.subscription_status === 'cancelled'
-                                                                ? 'bg-red-50 text-red-600 border-red-100'
+                                                                ? 'bg-red-50 text-red-700 border-red-100'
+                                                                : user.subscription_status === 'expired'
+                                                                ? 'bg-slate-100 text-slate-500 border-slate-200'
                                                                 : 'bg-slate-100 text-slate-600 border-slate-200'
                                                         }`}>
                                                             {user.plan_name}
