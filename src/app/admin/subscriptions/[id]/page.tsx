@@ -301,21 +301,49 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                         {/* Entitlement Caps */}
                         <div className="space-y-4">
                             <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#8c00ff] px-1">Entitlement Caps</h3>
-                            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 grid grid-cols-2 gap-4">
-                                {[
-                                    { label: 'Max Recordings',     value: data.cap_max_recordings },
-                                    { label: 'Max Length (min)',   value: data.cap_max_recording_minutes },
-                                    { label: 'Transcription Uses', value: data.cap_max_transcription_uses },
-                                    { label: 'Chapter Uses',       value: data.cap_max_chapter_uses },
-                                    { label: 'AI Generate Uses',   value: data.cap_max_generate_uses },
-                                    { label: 'Active Workflows',   value: data.cap_max_active_workflows },
-                                    { label: 'Video Quality',      value: data.video_quality_max === 2160 ? '4K' : data.video_quality_max === 1440 ? '2K' : `${data.video_quality_max}p`, raw: true },
-                                ].map((cap, i) => (
-                                    <div key={i} className="p-4 rounded-2xl bg-slate-50 flex flex-col gap-1">
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{cap.label}</span>
-                                        <span className="text-[22px] font-black text-slate-900">{'raw' in cap ? cap.value : capLabel(cap.value as number)}</span>
-                                    </div>
-                                ))}
+                            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-slate-50/70 border-b border-slate-100">
+                                            <th className="px-5 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Metric</th>
+                                            <th className="px-5 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Max Allowed</th>
+                                            <th className="px-5 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Used</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {[
+                                            { label: 'Recordings',       cap: data.cap_max_recordings,         used: data.recordings_used    },
+                                            { label: 'Recording Length', cap: data.cap_max_recording_minutes,  used: null                    },
+                                            { label: 'Transcriptions',   cap: data.cap_max_transcription_uses, used: data.transcription_uses },
+                                            { label: 'AI Chapters',      cap: data.cap_max_chapter_uses,       used: data.chapter_uses       },
+                                            { label: 'AI Generate',      cap: data.cap_max_generate_uses,      used: data.generate_uses      },
+                                            { label: 'Active Workflows', cap: data.cap_max_active_workflows,   used: null                    },
+                                        ].map((row, i) => (
+                                            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="px-5 py-3.5 text-[13px] font-semibold text-slate-700">{row.label}</td>
+                                                <td className="px-5 py-3.5 text-right">
+                                                    <span className="text-[13px] font-black text-slate-900">{capLabel(row.cap)}</span>
+                                                </td>
+                                                <td className="px-5 py-3.5 text-right">
+                                                    {row.used !== null
+                                                        ? <span className={`text-[13px] font-bold ${row.cap !== -1 && row.used >= row.cap ? 'text-red-500' : 'text-slate-600'}`}>{row.used}</span>
+                                                        : <span className="text-[12px] text-slate-300">—</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {/* Video quality row — no "used" concept */}
+                                        <tr className="hover:bg-slate-50/50 transition-colors">
+                                            <td className="px-5 py-3.5 text-[13px] font-semibold text-slate-700">Video Quality</td>
+                                            <td className="px-5 py-3.5 text-right">
+                                                <span className="text-[13px] font-black text-slate-900">
+                                                    {data.video_quality_max === 2160 ? '4K' : data.video_quality_max === 1440 ? '2K' : `${data.video_quality_max}p`}
+                                                </span>
+                                            </td>
+                                            <td className="px-5 py-3.5 text-right"><span className="text-[12px] text-slate-300">—</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
