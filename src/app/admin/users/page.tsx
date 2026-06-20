@@ -239,7 +239,7 @@ export default function AdminUsersPage() {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <p className="text-[12px] text-[#64748B] line-clamp-1 blur-[3.5px] group-hover:blur-0 transition-all duration-300">
+                                                        <p className="text-[12px] text-[#64748B] line-clamp-1">
                                                             {user.email}
                                                         </p>
                                                     </div>
