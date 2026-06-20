@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, use } from 'react';
 import {
     ArrowLeft, Zap, Sparkles, Wand2, GitBranch, Download,
-    Info, RotateCcw, XCircle, Image as ImageIcon, Lock, Video, Monitor
+    Info, RotateCcw, XCircle, Image as ImageIcon, Lock, Video, Monitor, Users
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -28,6 +28,8 @@ export default function EditSubscriptionPage({ params }: { params: Promise<{ id:
             const data = await adminSubscriptionService.getSubscriptionDetail(id);
             setSub(data);
             setForm({
+                seats:                      data.seats,
+                used_seats:                 data.used_seats,
                 recordings_used:            data.recordings_used,
                 transcription_uses:         data.transcription_uses,
                 chapter_uses:               data.chapter_uses,
@@ -225,7 +227,8 @@ export default function EditSubscriptionPage({ params }: { params: Promise<{ id:
                             <p className="text-[12px] text-slate-400 mt-1">These counters reset on billing renewal. Use Reset to clear a user&apos;s usage.</p>
                         </div>
                         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-6">
-                            <NumInput label="Recordings Used"     icon={Zap}      field="recordings_used"    helper="Total recordings made this period" allowReset />
+                            <NumInput label="Used Seats"          icon={Users}    field="used_seats"         helper="Seats currently occupied"            allowReset />
+                            <NumInput label="Recordings Used"     icon={Zap}      field="recordings_used"    helper="Total recordings made this period"   allowReset />
                             <NumInput label="Transcription Uses"  icon={Sparkles} field="transcription_uses" helper="AI transcription uses this period"   allowReset />
                             <NumInput label="AI Chapter Uses"     icon={Sparkles} field="chapter_uses"       helper="AI chapter generation uses"          allowReset />
                             <NumInput label="AI Generate Uses"    icon={Wand2}    field="generate_uses"      helper="AI content generation uses"          allowReset />
@@ -239,6 +242,7 @@ export default function EditSubscriptionPage({ params }: { params: Promise<{ id:
                             <p className="text-[12px] text-slate-400 mt-1">Override plan caps for this user. Set to -1 or toggle ∞ for unlimited.</p>
                         </div>
                         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-6">
+                            <NumInput label="Total Seats"           icon={Users}     field="seats"                      helper="Seats allocated to this subscription" />
                             <NumInput label="Max Recordings"        icon={Zap}       field="cap_max_recordings"         helper="Max recordings allowed"             allowUnlimited />
                             <NumInput label="Max Length (minutes)"  icon={Zap}       field="cap_max_recording_minutes"  helper="Max duration per recording in mins"  allowUnlimited />
                             <NumInput label="Max Transcription Uses" icon={Sparkles} field="cap_max_transcription_uses" helper="Max AI transcription uses"           allowUnlimited />

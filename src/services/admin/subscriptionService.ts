@@ -131,6 +131,8 @@ export interface SubscriptionUpdate {
 }
 
 export interface SubscriptionUsageOverride {
+    seats?: number;
+    used_seats?: number;
     recordings_used?: number;
     transcription_uses?: number;
     chapter_uses?: number;

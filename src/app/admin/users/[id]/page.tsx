@@ -457,7 +457,7 @@ export default function UserDetailPage() {
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     <Link
-                                                        href={`/admin/subscriptions?search=${sub.id}`}
+                                                        href={`/admin/subscriptions/${sub.id}`}
                                                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-white hover:shadow-sm border border-[#E2E8F0] text-[11px] font-bold text-[#64748B] hover:text-[#0F172A] transition-all"
                                                     >
                                                         <Eye size={12} />
