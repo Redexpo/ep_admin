@@ -34,6 +34,7 @@ export interface Video {
     chapters?: any[];
     reports?: any[];
     media_info?: any;
+    is_deleted?: boolean;
 }
 
 export interface AppLog {

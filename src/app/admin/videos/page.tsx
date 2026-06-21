@@ -273,6 +273,12 @@ export default function AdminVideosPage() {
                                         Created
                                     </th>
                                     <th
+                                        className="text-left px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
+                                        style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
+                                    >
+                                        Deleted
+                                    </th>
+                                    <th
                                         className="text-right px-6 py-4 text-[12px] leading-[18px] font-semibold uppercase tracking-wide"
                                         style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
                                     >
@@ -437,6 +443,15 @@ export default function AdminVideosPage() {
                                                             {formattedTime}
                                                         </div>
                                                     </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {video.is_deleted ? (
+                                                        <span className="inline-flex px-3 py-1 rounded-full text-[12px] leading-[18px] font-semibold bg-red-50 text-red-500 border border-red-200">
+                                                            Deleted
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[12px] text-slate-300">—</span>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center justify-end gap-2">
