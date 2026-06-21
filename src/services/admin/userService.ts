@@ -51,6 +51,7 @@ export interface Recording {
     thumbnail_url: string | null;
     created_at: string;
     file_size: number;
+    is_deleted: boolean;
 }
 
 export interface RecordingListResponse {

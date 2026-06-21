@@ -557,6 +557,7 @@ export default function UserDetailPage() {
                                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Recording</th>
                                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Duration</th>
                                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Status</th>
+                                                    <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Deleted</th>
                                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Date</th>
                                                     <th className="px-6 py-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider text-right">Actions</th>
                                                 </tr>
@@ -588,6 +589,17 @@ export default function UserDetailPage() {
                                                                 }`}>
                                                                 {recording.status}
                                                             </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            {recording.is_deleted ? (
+                                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-500">
+                                                                    <XCircle size={10} /> Yes
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-50 text-slate-400">
+                                                                    No
+                                                                </span>
+                                                            )}
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <span className="text-[13px] font-bold text-[#94A3B8]">{new Date(recording.created_at).toLocaleDateString()}</span>
