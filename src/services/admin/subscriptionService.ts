@@ -126,13 +126,6 @@ export interface AssignmentDetail extends AssignmentRecord {
     subscription_status?: string;
 }
 
-export interface SubscriptionUpdate {
-    plan_id?: string;
-    status?: string;
-    billing_cycle?: string;
-    seats?: number;
-}
-
 export interface SubscriptionUsageOverride {
     seats?: number;
     used_seats?: number;
@@ -220,10 +213,6 @@ export const adminSubscriptionService = {
     async getSubscriptionDetail(subscriptionId: string): Promise<AdminSubscriptionDetail> {
         const response = await api.get(`/api/v1/admin/subscriptions/${subscriptionId}`);
         return response.data;
-    },
-
-    async updateSubscription(subscriptionId: string, data: SubscriptionUpdate): Promise<void> {
-        await api.patch(`/api/v1/admin/subscriptions/${subscriptionId}`, data);
     },
 
     async overrideSubscriptionUsage(subscriptionId: string, data: SubscriptionUsageOverride): Promise<void> {
