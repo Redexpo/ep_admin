@@ -5,7 +5,7 @@ import {
     ArrowLeft, CheckCircle2, XCircle, AlertCircle, Clock,
     CreditCard, Users, Calendar, Zap, Download, GitBranch,
     Wand2, User, Tag, Shield, Edit2, RefreshCw, Image as ImageIcon, Lock, Sparkles, Video,
-    Gift, Ban
+    Gift, Ban, DollarSign, Receipt
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -281,6 +281,8 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                                 { icon: <Users size={16} />,      label: 'Seats',        value: `${data.used_seats} used / ${data.seats} total` },
                                 { icon: <Calendar size={16} />,   label: 'Period Start',  value: fmt(data.current_period_start) },
                                 { icon: <Calendar size={16} />,   label: 'Period End',    value: fmt(data.current_period_end) },
+                                { icon: <DollarSign size={16} />, label: 'Paid Price',    value: data.paid_price > 0 ? `$${data.paid_price.toFixed(2)}` : 'Complimentary' },
+                                { icon: <Receipt size={16} />,    label: 'Payment Order', value: data.payment_order_id || '—' },
                                 { icon: <Zap size={16} />,        label: 'Gateway',       value: data.payment_gateway || '—' },
                                 { icon: <Shield size={16} />,     label: 'Gateway Sub ID',value: data.gateway_subscription_id || '—' },
                                 { icon: <User size={16} />,       label: 'User ID',       value: data.user_id },

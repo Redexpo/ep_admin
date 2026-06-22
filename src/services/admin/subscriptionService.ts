@@ -49,6 +49,8 @@ export interface AdminSubscriptionDetail {
     current_period_end?: string;
     payment_gateway?: string;
     gateway_subscription_id?: string;
+    paid_price: number;
+    payment_order_id?: string | null;
     subscription_source: string;
     assigned_by_admin_id?: string;
     assignment_notes?: string;
