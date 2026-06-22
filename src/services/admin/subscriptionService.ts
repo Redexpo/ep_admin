@@ -89,6 +89,7 @@ export interface AdminAssignPlanRequest {
     end_date?: string;
     seats: number;
     notes: string;
+    paid_price: number;
     features: AssignmentFeatures;
 }
 

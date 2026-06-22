@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, ChevronRight, ChevronLeft, Gift, Calendar, Users, StickyNote, Loader2 } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Gift, Calendar, Users, StickyNote, DollarSign, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminSubscriptionService, AdminAssignPlanRequest, AssignmentFeatures } from '@/services/admin/subscriptionService';
 import { adminPlanService, Plan, PlanLimit } from '@/services/admin/planService';
@@ -47,6 +47,7 @@ export default function AssignPlanModal({ userId, userEmail, onClose, onSuccess 
     const [endDate, setEndDate] = useState('');
     const [seats, setSeats] = useState(1);
     const [notes, setNotes] = useState('');
+    const [paidPrice, setPaidPrice] = useState(0);
 
     // Step 2 fields
     const [features, setFeatures] = useState<AssignmentFeatures>(DEFAULT_FEATURES);
@@ -117,6 +118,7 @@ export default function AssignPlanModal({ userId, userEmail, onClose, onSuccess 
                 plan_id: planId,
                 seats,
                 notes,
+                paid_price: paidPrice,
                 features,
                 ...(durationType === 'months' ? { months } : { end_date: new Date(endDate).toISOString() }),
             };
@@ -288,6 +290,27 @@ export default function AssignPlanModal({ userId, userEmail, onClose, onSuccess 
                                         onChange={e => setSeats(parseInt(e.target.value) || 1)}
                                         className="w-32 h-11 px-4 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#8c00ff]/30 focus:border-[#8c00ff] text-center"
                                     />
+                                </div>
+
+                                {/* Paid Price */}
+                                <div className="space-y-1.5">
+                                    <label className="text-[12px] font-bold text-slate-600 uppercase tracking-wide flex items-center gap-2">
+                                        <DollarSign size={13} /> Paid Price (USD)
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <div className="relative w-36">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-bold text-slate-400">$</span>
+                                            <input
+                                                type="number"
+                                                min={0}
+                                                step={0.01}
+                                                value={paidPrice}
+                                                onChange={e => setPaidPrice(parseFloat(e.target.value) || 0)}
+                                                className="w-full h-11 pl-7 pr-4 rounded-xl border border-slate-200 text-[13px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#8c00ff]/30 focus:border-[#8c00ff]"
+                                            />
+                                        </div>
+                                        <span className="text-[12px] text-slate-400">0 = complimentary</span>
+                                    </div>
                                 </div>
 
                                 {/* Notes */}
