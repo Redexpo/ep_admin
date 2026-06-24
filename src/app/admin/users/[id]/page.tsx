@@ -35,10 +35,11 @@ import {
     XCircle,
     AlertCircle,
     RefreshCw,
+    Puzzle,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AssignPlanModal from '@/components/admin/AssignPlanModal';
-import { userService, UserDetail, Recording, UserIP } from '@/services/admin/userService';
+import { userService, UserDetail, Recording, UserIP, UserDevice } from '@/services/admin/userService';
 import { adminSubscriptionService, AdminSubscription } from '@/services/admin/subscriptionService';
 import { toast } from 'sonner';
 
@@ -56,6 +57,8 @@ export default function UserDetailPage() {
     const [isIPsLoading, setIsIPsLoading] = useState(true);
     const [subscriptions, setSubscriptions] = useState<AdminSubscription[]>([]);
     const [isSubsLoading, setIsSubsLoading] = useState(true);
+    const [devices, setDevices] = useState<UserDevice[]>([]);
+    const [isDevicesLoading, setIsDevicesLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -123,11 +126,24 @@ export default function UserDetailPage() {
         }
     }, [userId]);
 
+    const fetchUserDevices = useCallback(async () => {
+        try {
+            setIsDevicesLoading(true);
+            const response = await userService.getUserDevices(userId);
+            if (response.data) setDevices(response.data);
+        } catch {
+            // non-critical
+        } finally {
+            setIsDevicesLoading(false);
+        }
+    }, [userId]);
+
     useEffect(() => {
         fetchUserData();
         fetchUserIPs();
         fetchUserSubscriptions();
-    }, [fetchUserData, fetchUserIPs, fetchUserSubscriptions]);
+        fetchUserDevices();
+    }, [fetchUserData, fetchUserIPs, fetchUserSubscriptions, fetchUserDevices]);
 
     useEffect(() => {
         fetchUserRecordings(currentPage);
@@ -759,6 +775,76 @@ export default function UserDetailPage() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className="text-[11px] text-slate-500 whitespace-nowrap">{fmtTs(ip.last_seen)}</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Installed Devices */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                        <h2 className="text-[22px] font-black tracking-tight text-[#0F172A]">Installed Devices</h2>
+                        <span className="text-[12px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-xl">
+                            {isDevicesLoading ? '…' : `${devices.length} device${devices.length !== 1 ? 's' : ''}`}
+                        </span>
+                    </div>
+
+                    <div className="bg-white rounded-[32px] border border-[#E2E8F0] shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-slate-50/60 border-b border-slate-100">
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Device</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Version</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">First Seen</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Last Seen</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {isDevicesLoading ? (
+                                        Array(2).fill(0).map((_, i) => (
+                                            <tr key={i} className="animate-pulse">
+                                                <td className="px-6 py-4"><div className="h-4 w-32 bg-slate-100 rounded-full" /></td>
+                                                <td colSpan={3} className="px-6 py-4"><div className="h-4 bg-slate-100 rounded-lg" /></td>
+                                            </tr>
+                                        ))
+                                    ) : devices.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="px-6 py-14 text-center">
+                                                <Puzzle size={32} className="mx-auto text-slate-200 mb-3" />
+                                                <p className="text-[13px] text-slate-400 font-medium">No devices registered for this user</p>
+                                            </td>
+                                        </tr>
+                                    ) : devices.map((device) => {
+                                        const fmtTs = (s: string | null) =>
+                                            s ? new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+                                        const DEVICE_LABELS: Record<string, { label: string; icon: React.ReactNode; chip: string }> = {
+                                            CHROME_EXTENSION: { label: 'Chrome Extension', icon: <Puzzle size={13} />, chip: 'bg-blue-50 text-blue-600' },
+                                            DESKTOP_APP:      { label: 'Desktop App',      icon: <Monitor size={13} />, chip: 'bg-slate-100 text-slate-600' },
+                                            MOBILE_APP:       { label: 'Mobile App',       icon: <Smartphone size={13} />, chip: 'bg-green-50 text-green-600' },
+                                        };
+                                        const meta = DEVICE_LABELS[device.device_type] ?? { label: device.device_type, icon: <Monitor size={13} />, chip: 'bg-slate-100 text-slate-600' };
+                                        return (
+                                            <tr key={device.device_type} className="hover:bg-slate-50/60 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-bold ${meta.chip}`}>
+                                                        {meta.icon}
+                                                        {meta.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="font-mono text-[12px] text-slate-600">{device.version ?? '—'}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[11px] text-slate-500 whitespace-nowrap">{fmtTs(device.first_seen_at)}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[11px] text-slate-500 whitespace-nowrap">{fmtTs(device.last_seen_at)}</span>
                                                 </td>
                                             </tr>
                                         );

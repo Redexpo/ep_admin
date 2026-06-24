@@ -86,6 +86,13 @@ export interface UserIP {
     last_seen: string | null;
 }
 
+export interface UserDevice {
+    device_type: string;
+    version: string | null;
+    first_seen_at: string | null;
+    last_seen_at: string | null;
+}
+
 export interface UserStats {
     total_users: { value: number; change: string; trend: 'up' | 'down' };
     verified_users: { value: number; change: string; trend: 'up' | 'down' };
@@ -115,6 +122,10 @@ export const userService = {
     },
     getUserIPs: async (id: string): Promise<{ data: UserIP[] }> => {
         const response = await api.get(`/api/v1/admin/users/${id}/ips`);
+        return response.data;
+    },
+    getUserDevices: async (id: string): Promise<{ data: UserDevice[] }> => {
+        const response = await api.get(`/api/v1/admin/users/${id}/devices`);
         return response.data;
     },
 };
