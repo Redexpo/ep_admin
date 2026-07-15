@@ -694,7 +694,7 @@ function InfoTable({ title, icon, data }: { title: string; icon: ReactNode; data
                 <tbody>
                     {entries.map(([key, value], i) => (
                         <tr key={key} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'} border-b border-[#F8FAFC] last:border-0`}>
-                            <td className="px-5 py-2 text-[11px] font-medium text-[#475569] uppercase tracking-wide w-1/2">
+                            <td className="px-5 py-2 text-[11px] font-medium text-[#475569] tracking-wide w-1/2">
                                 {toLabel(key)}
                             </td>
                             <td className="px-5 py-2 text-right">
