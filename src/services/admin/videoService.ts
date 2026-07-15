@@ -35,6 +35,11 @@ export interface Video {
     reports?: any[];
     media_info?: any;
     is_deleted?: boolean;
+    device_settings?: Record<string, any> | null;
+    system_info?: Record<string, any> | null;
+    network_info?: Record<string, any> | null;
+    audience_settings?: Record<string, any> | null;
+    source_info?: Record<string, any> | null;
 }
 
 export interface AppLog {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -519,31 +519,32 @@ export default function VideoDetailPage() {
                         )}
 
                         {activeTab === 'tech' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in zoom-in-95 duration-300">
-                                <div className="bg-white p-8 rounded-[40px] border border-[#E2E8F0] space-y-6">
-                                    <h3 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2">
-                                        <Monitor size={18} className="text-[#3b82f6]" />
-                                        System Metadata
-                                    </h3>
-                                    <div className="space-y-4">
-                                        <MetaRow label="Encoding" value="H.264 / AAC" />
-                                        <MetaRow label="Browser" value={video.media_info?.screen?.browser || 'Unknown'} />
-                                        <MetaRow label="OS" value={video.media_info?.screen?.os || 'Unknown'} />
-                                        <MetaRow label="Resolution" value={`${video.media_info?.screen?.width || 1920}x${video.media_info?.screen?.height || 1080}`} />
-                                    </div>
-                                </div>
-                                <div className="bg-white p-8 rounded-[40px] border border-[#E2E8F0] space-y-6">
-                                    <h3 className="text-[18px] font-black text-[#0F172A] flex items-center gap-2">
-                                        <Wifi size={18} className="text-green-500" />
-                                        Connectivity
-                                    </h3>
-                                    <div className="space-y-4">
-                                        <MetaRow label="Protocol" value="WebRTC / HLS" />
-                                        <MetaRow label="Bitrate" value="2500 kbps (avg)" />
-                                        <MetaRow label="Network Type" value="Broadband" />
-                                        <MetaRow label="Storage Path" value={`/v1/recordings/${video.encrypted_id}`} />
-                                    </div>
-                                </div>
+                            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                                <InfoTable
+                                    title="Device Settings"
+                                    icon={<Monitor size={15} className="text-[#3b82f6]" />}
+                                    data={video.device_settings}
+                                />
+                                <InfoTable
+                                    title="System Info"
+                                    icon={<Activity size={15} className="text-[#8c00ff]" />}
+                                    data={video.system_info}
+                                />
+                                <InfoTable
+                                    title="Network Info"
+                                    icon={<Wifi size={15} className="text-green-500" />}
+                                    data={video.network_info}
+                                />
+                                <InfoTable
+                                    title="Audience Settings"
+                                    icon={<Settings size={15} className="text-amber-500" />}
+                                    data={video.audience_settings}
+                                />
+                                <InfoTable
+                                    title="Source Info"
+                                    icon={<Zap size={15} className="text-slate-400" />}
+                                    data={video.source_info}
+                                />
                             </div>
                         )}
                     </div>
@@ -631,6 +632,72 @@ function MetaRow({ label, value }: any) {
         <div className="flex items-center justify-between py-1">
             <span className="text-[14px] font-bold text-[#94A3B8]">{label}</span>
             <span className="text-[14px] font-black text-[#0F172A]">{value}</span>
+        </div>
+    );
+}
+
+function toLabel(key: string) {
+    return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function CellValue({ value }: { value: any }) {
+    if (value === null || value === undefined || value === '') {
+        return <span className="text-slate-300 font-mono text-[11px]">—</span>;
+    }
+    if (typeof value === 'boolean') {
+        return (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wide ${value ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+                {value ? 'Yes' : 'No'}
+            </span>
+        );
+    }
+    if (typeof value === 'number') {
+        return <span className="font-mono text-[12px] font-bold text-[#0F172A]">{value === -1 ? '∞' : value}</span>;
+    }
+    const str = String(value);
+    return (
+        <span className="text-[12px] font-bold text-[#0F172A] text-right max-w-[220px] truncate block" title={str}>
+            {str}
+        </span>
+    );
+}
+
+function InfoTable({ title, icon, data }: { title: string; icon: ReactNode; data: Record<string, any> | null | undefined }) {
+    if (!data) {
+        return (
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+                <div className="flex items-center gap-2 px-5 py-3 border-b border-[#F1F5F9]">
+                    {icon}
+                    <span className="text-[13px] font-black text-[#0F172A]">{title}</span>
+                </div>
+                <p className="px-5 py-3 text-[12px] text-slate-400 font-medium italic">No data recorded</p>
+            </div>
+        );
+    }
+
+    const entries = Object.entries(data).filter(([, v]) => v !== undefined);
+
+    return (
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-[#F1F5F9] bg-slate-50/60">
+                {icon}
+                <span className="text-[13px] font-black text-[#0F172A]">{title}</span>
+                <span className="ml-auto text-[11px] font-bold text-slate-300">{entries.length} fields</span>
+            </div>
+            <table className="w-full">
+                <tbody>
+                    {entries.map(([key, value], i) => (
+                        <tr key={key} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'} border-b border-[#F8FAFC] last:border-0`}>
+                            <td className="px-5 py-2 text-[11px] font-black text-[#94A3B8] uppercase tracking-wide w-1/2">
+                                {toLabel(key)}
+                            </td>
+                            <td className="px-5 py-2 text-right">
+                                <CellValue value={value} />
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 }
