@@ -293,7 +293,18 @@ export default function VideoDetailPage() {
                         )}
 
                         {activeTab === 'transcription' && (
-                            <div className="bg-white rounded-[40px] border border-[#E2E8F0] p-10 space-y-8 animate-in fade-in zoom-in-95 duration-300">
+                            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                                <InfoTable
+                                    title="Transcription Settings"
+                                    icon={<FileText size={15} className="text-[#8c00ff]" />}
+                                    data={{
+                                        allow_transcription: video.allow_transcription ?? null,
+                                        allow_chapters: video.allow_chapters ?? null,
+                                        is_transcribed: video.is_transcribed ?? null,
+                                        transcription_status: video.transcription_status ?? null,
+                                    }}
+                                />
+                            <div className="bg-white rounded-[40px] border border-[#E2E8F0] p-10 space-y-8">
                                 <div className="flex items-center justify-between">
                                     <h2 className="text-[24px] font-black text-[#0F172A]">Transcription</h2>
                                     <button className="text-[14px] font-black text-[#8c00ff] hover:underline">Download Text</button>
@@ -326,6 +337,7 @@ export default function VideoDetailPage() {
                                         </div>
                                     </div>
                                 )}
+                            </div>
                             </div>
                         )}
 
