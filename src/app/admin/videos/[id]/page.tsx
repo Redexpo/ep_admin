@@ -520,31 +520,37 @@ export default function VideoDetailPage() {
 
                         {activeTab === 'tech' && (
                             <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                                <InfoTable
-                                    title="Device Settings"
-                                    icon={<Monitor size={15} className="text-[#3b82f6]" />}
-                                    data={video.device_settings}
-                                />
-                                <InfoTable
-                                    title="System Info"
-                                    icon={<Activity size={15} className="text-[#8c00ff]" />}
-                                    data={video.system_info}
-                                />
-                                <InfoTable
-                                    title="Network Info"
-                                    icon={<Wifi size={15} className="text-green-500" />}
-                                    data={video.network_info}
-                                />
-                                <InfoTable
-                                    title="Audience Settings"
-                                    icon={<Settings size={15} className="text-amber-500" />}
-                                    data={video.audience_settings}
-                                />
-                                <InfoTable
-                                    title="Source Info"
-                                    icon={<Zap size={15} className="text-slate-400" />}
-                                    data={video.source_info}
-                                />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InfoTable
+                                        title="Device Settings"
+                                        icon={<Monitor size={15} className="text-[#3b82f6]" />}
+                                        data={video.device_settings}
+                                    />
+                                    <InfoTable
+                                        title="Audience Settings"
+                                        icon={<Settings size={15} className="text-amber-500" />}
+                                        data={video.audience_settings}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InfoTable
+                                        title="Network Info"
+                                        icon={<Wifi size={15} className="text-green-500" />}
+                                        data={video.network_info}
+                                    />
+                                    <div className="space-y-4">
+                                        <InfoTable
+                                            title="System Info"
+                                            icon={<Activity size={15} className="text-[#8c00ff]" />}
+                                            data={video.system_info}
+                                        />
+                                        <InfoTable
+                                            title="Source Info"
+                                            icon={<Zap size={15} className="text-slate-400" />}
+                                            data={video.source_info}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -646,7 +652,7 @@ function CellValue({ value }: { value: any }) {
     }
     if (typeof value === 'boolean') {
         return (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wide ${value ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wide ${value ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
                 {value ? 'Yes' : 'No'}
             </span>
         );
@@ -656,7 +662,7 @@ function CellValue({ value }: { value: any }) {
     }
     const str = String(value);
     return (
-        <span className="text-[12px] font-bold text-[#0F172A] text-right max-w-[220px] truncate block" title={str}>
+        <span className="text-[12px] font-bold text-[#0F172A] max-w-[180px] truncate block ml-auto" title={str}>
             {str}
         </span>
     );
@@ -688,7 +694,7 @@ function InfoTable({ title, icon, data }: { title: string; icon: ReactNode; data
                 <tbody>
                     {entries.map(([key, value], i) => (
                         <tr key={key} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'} border-b border-[#F8FAFC] last:border-0`}>
-                            <td className="px-5 py-2 text-[11px] font-black text-[#94A3B8] uppercase tracking-wide w-1/2">
+                            <td className="px-5 py-2 text-[11px] font-medium text-[#475569] uppercase tracking-wide w-1/2">
                                 {toLabel(key)}
                             </td>
                             <td className="px-5 py-2 text-right">
