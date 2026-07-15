@@ -289,6 +289,8 @@ export default function VideoDetailPage() {
                                         </div>
                                     )}
                                 </div>
+
+                                {video.media_info && <MediaInfoSection mediaInfo={video.media_info} />}
                             </div>
                         )}
 
@@ -716,6 +718,40 @@ function InfoTable({ title, icon, data }: { title: string; icon: ReactNode; data
                     ))}
                 </tbody>
             </table>
+        </div>
+    );
+}
+
+function MediaInfoSection({ mediaInfo }: { mediaInfo: Record<string, any> }) {
+    const { provider, storage_url, sprite_url, screen, camera, audio, combined, ...rest } = mediaInfo;
+
+    const topLevel = { provider, storage_url, sprite_url, ...rest };
+    const tracks: { key: string; label: string; color: string; data: Record<string, any> }[] = [
+        { key: 'screen',   label: 'Screen Track',   color: 'text-[#3b82f6]',  data: screen   },
+        { key: 'camera',   label: 'Camera Track',   color: 'text-[#8c00ff]',  data: camera   },
+        { key: 'audio',    label: 'Audio Track',    color: 'text-green-500',  data: audio    },
+        { key: 'combined', label: 'Combined Track', color: 'text-amber-500',  data: combined },
+    ].filter(t => t.data && Object.keys(t.data).length > 0);
+
+    return (
+        <div className="space-y-3">
+            <InfoTable
+                title="Storage"
+                icon={<HardDrive size={15} className="text-slate-400" />}
+                data={Object.fromEntries(Object.entries(topLevel).filter(([, v]) => v !== undefined && v !== null))}
+            />
+            {tracks.length > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                    {tracks.map(t => (
+                        <InfoTable
+                            key={t.key}
+                            title={t.label}
+                            icon={<Activity size={15} className={t.color} />}
+                            data={t.data}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
