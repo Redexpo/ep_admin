@@ -8,7 +8,7 @@ import {
     LayoutDashboard, Users, Video, AlertCircle, BarChart3,
     HardDrive, Layers, Shield, Globe, Settings, Search,
     Bell, ChevronDown, LogOut, ScrollText, Repeat, Receipt,
-    PanelLeftClose, PanelLeftOpen, Building2, FolderOpen, MessageSquare, Briefcase, Camera, MessageCircle, FileText, Landmark, Package, Tag, Webhook, Gift,
+    PanelLeftClose, PanelLeftOpen, Building2, FolderOpen, MessageSquare, Briefcase, Camera, MessageCircle, FileText, Landmark, Package, Tag, Webhook, Gift, Newspaper,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import AuthGuard from '@/components/auth/AuthGuard';
@@ -39,6 +39,7 @@ const navGroups: {
             { name: 'Folders',      path: '/admin/folders',      icon: FolderOpen, countKey: 'folders'     },
             { name: 'Screenshots',     path: '/admin/screenshots',     icon: Camera,    countKey: 'screenshots'    },
             { name: 'Transcriptions',  path: '/admin/transcriptions',  icon: FileText,  countKey: 'transcriptions' },
+            { name: 'Blog',            path: '/admin/blog',            icon: Newspaper                             },
         ],
     },
     {
@@ -373,6 +374,7 @@ function Breadcrumb({ pathname }: { pathname: string }) {
         contacts: 'Contacts', us: 'Contact Us', sales: 'Contact Sales',
         comments: 'Comments & Reactions',
         transcriptions: 'Transcriptions',
+        blog: 'Blog', new: 'New Post',
         notifications: 'Notifications',
         gateway: 'Gateway Accounts',
         products: 'Products',
