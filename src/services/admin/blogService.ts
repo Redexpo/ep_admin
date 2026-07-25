@@ -15,6 +15,16 @@ export interface BlogCategory {
     name: string;
     description?: string;
     color?: string;
+    sort_order?: number;
+    post_count?: number;
+}
+
+export interface BlogCategoryPayload {
+    name: string;
+    slug?: string;
+    description?: string | null;
+    color?: string | null;
+    sort_order?: number;
 }
 
 export interface BlogPost {
@@ -154,8 +164,36 @@ export const adminBlogService = {
         return response.data;
     },
 
-    async listCategories(): Promise<BlogCategory[]> {
-        const response = await api.get("/api/v1/admin/blog/categories");
+    async listCategories(search?: string): Promise<BlogCategory[]> {
+        const response = await api.get("/api/v1/admin/blog/categories", {
+            params: search ? { search } : undefined,
+        });
+        return response.data;
+    },
+
+    async getCategory(id: string): Promise<BlogCategory> {
+        const response = await api.get(`/api/v1/admin/blog/categories/${id}`);
+        return response.data;
+    },
+
+    async createCategory(payload: BlogCategoryPayload): Promise<BlogCategory> {
+        const response = await api.post("/api/v1/admin/blog/categories", payload);
+        return response.data;
+    },
+
+    async updateCategory(id: string, payload: Partial<BlogCategoryPayload>): Promise<BlogCategory> {
+        const response = await api.put(`/api/v1/admin/blog/categories/${id}`, payload);
+        return response.data;
+    },
+
+    async deleteCategory(id: string): Promise<void> {
+        await api.delete(`/api/v1/admin/blog/categories/${id}`);
+    },
+
+    async checkCategorySlug(slug: string, exclude_id?: string): Promise<SlugAvailability> {
+        const response = await api.get("/api/v1/admin/blog/categories/check-slug", {
+            params: { slug, exclude_id },
+        });
         return response.data;
     },
 };

@@ -39,7 +39,6 @@ const navGroups: {
             { name: 'Folders',      path: '/admin/folders',      icon: FolderOpen, countKey: 'folders'     },
             { name: 'Screenshots',     path: '/admin/screenshots',     icon: Camera,    countKey: 'screenshots'    },
             { name: 'Transcriptions',  path: '/admin/transcriptions',  icon: FileText,  countKey: 'transcriptions' },
-            { name: 'Blog',            path: '/admin/blog',            icon: Newspaper                             },
         ],
     },
     {
@@ -64,6 +63,8 @@ const navGroups: {
             { name: 'Notifications',  path: '/admin/notifications',   icon: Bell,          countKey: 'notifications'  },
             { name: 'Contact Us',     path: '/admin/contacts/us',     icon: MessageSquare, countKey: 'contacts_us'    },
             { name: 'Contact Sales',  path: '/admin/contacts/sales',  icon: Briefcase,     countKey: 'contacts_sales' },
+            { name: 'Blog',           path: '/admin/blog',            icon: Newspaper                                 },
+            { name: 'Blog Categories', path: '/admin/blog/categories', icon: Tag                                      },
         ],
     },
     {
@@ -374,7 +375,7 @@ function Breadcrumb({ pathname }: { pathname: string }) {
         contacts: 'Contacts', us: 'Contact Us', sales: 'Contact Sales',
         comments: 'Comments & Reactions',
         transcriptions: 'Transcriptions',
-        blog: 'Blog', new: 'New Post',
+        blog: 'Blog', new: 'New Post', categories: 'Categories',
         notifications: 'Notifications',
         gateway: 'Gateway Accounts',
         products: 'Products',
