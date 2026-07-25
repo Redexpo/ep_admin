@@ -208,15 +208,23 @@ export default function BlogForm({ mode, initial }: BlogFormProps) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    {initial?.slug ? (
+                    {initial?.id ? (
                         <Link
-                            href={`/blog/${initial.slug}`}
+                            href={`/admin/blog/${initial.id}/preview`}
                             target="_blank"
                             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
+                            title="Opens a preview of the last saved version in a new tab"
                         >
                             <Eye size={14} /> Preview
                         </Link>
-                    ) : null}
+                    ) : (
+                        <span
+                            className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-[13px] font-semibold text-slate-400"
+                            title="Save as draft first to preview"
+                        >
+                            <Eye size={14} /> Preview
+                        </span>
+                    )}
 
                     <button
                         type="button"

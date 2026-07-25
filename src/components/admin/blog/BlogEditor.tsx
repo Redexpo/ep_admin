@@ -6,12 +6,16 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TableCell } from '@tiptap/extension-table-cell';
 import { useEffect } from 'react';
 import {
     Bold, Italic, Underline as UnderlineIcon, Strikethrough,
     Heading2, Heading3, List, ListOrdered, Quote, Code,
     Link as LinkIcon, Image as ImageIcon, Undo2, Redo2,
-    Minus, Pilcrow,
+    Minus, Pilcrow, Table as TableIcon, Trash2, Rows3, Columns3,
 } from 'lucide-react';
 
 type BlogEditorProps = {
@@ -136,6 +140,28 @@ function Toolbar({ editor }: { editor: Editor }) {
             <ToolbarButton title="Image" onClick={promptImage}>
                 <ImageIcon size={15} />
             </ToolbarButton>
+
+            <Divider />
+
+            <ToolbarButton
+                title="Insert table"
+                onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+            >
+                <TableIcon size={15} />
+            </ToolbarButton>
+            {editor.isActive('table') ? (
+                <>
+                    <ToolbarButton title="Add row below" onClick={() => editor.chain().focus().addRowAfter().run()}>
+                        <Rows3 size={15} />
+                    </ToolbarButton>
+                    <ToolbarButton title="Add column right" onClick={() => editor.chain().focus().addColumnAfter().run()}>
+                        <Columns3 size={15} />
+                    </ToolbarButton>
+                    <ToolbarButton title="Delete table" onClick={() => editor.chain().focus().deleteTable().run()}>
+                        <Trash2 size={15} />
+                    </ToolbarButton>
+                </>
+            ) : null}
         </div>
     );
 }
@@ -161,6 +187,23 @@ export default function BlogEditor({ value, onChange, placeholder }: BlogEditorP
             Image.configure({
                 HTMLAttributes: {
                     class: 'my-4 rounded-xl border border-slate-200',
+                },
+            }),
+            Table.configure({
+                resizable: true,
+                HTMLAttributes: {
+                    class: 'my-4 w-full border-collapse overflow-hidden rounded-xl border border-slate-200 text-[13px]',
+                },
+            }),
+            TableRow,
+            TableHeader.configure({
+                HTMLAttributes: {
+                    class: 'border border-slate-200 bg-slate-50 px-3 py-2 text-left font-semibold text-slate-700',
+                },
+            }),
+            TableCell.configure({
+                HTMLAttributes: {
+                    class: 'border border-slate-200 px-3 py-2 align-top text-slate-700',
                 },
             }),
         ],
