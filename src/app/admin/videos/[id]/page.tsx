@@ -29,8 +29,21 @@ import {
     ScrollText,
     CheckCircle2,
     XCircle,
-    AlertCircle,
     Zap,
+    Clapperboard,
+    Radio,
+    Square,
+    Send,
+    ImageIcon,
+    Cpu,
+    Layers,
+    Upload,
+    Sparkles,
+    Unplug,
+    RotateCcw,
+    SkipForward,
+    RefreshCw,
+    type LucideIcon,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Tooltip } from '@/components/ui/Tooltip';
@@ -542,14 +555,19 @@ export default function VideoDetailPage() {
                                         <p className="font-bold text-slate-400">No activity logged for this recording yet.</p>
                                     </div>
                                 ) : (
-                                    <div className="relative">
-                                        <div className="absolute left-[19px] top-0 bottom-0 w-px bg-gradient-to-b from-[#8c00ff]/20 via-slate-200 to-transparent" />
-                                        <div className="space-y-1">
+                                    <>
+                                        <PipelineOverview logs={logs} />
+                                        <div>
                                             {logs.map((log, i) => (
-                                                <LogEntry key={i} log={log} isLast={i === logs.length - 1} />
+                                                <LogEntry
+                                                    key={i}
+                                                    log={log}
+                                                    prevLog={i > 0 ? logs[i - 1] : null}
+                                                    isLast={i === logs.length - 1}
+                                                />
                                             ))}
                                         </div>
-                                    </div>
+                                    </>
                                 )}
                             </div>
                         )}
@@ -913,50 +931,155 @@ const formatNumber = (num: number) => {
 };
 
 const LOG_LEVEL_CONFIG = {
-    INFO:     { dot: 'bg-[#8c00ff]',  badge: 'bg-[#f3eefe] text-[#8c00ff]',  icon: CheckCircle2, ring: 'ring-purple-100' },
-    WARNING:  { dot: 'bg-amber-400',   badge: 'bg-amber-50 text-amber-600',    icon: AlertCircle,  ring: 'ring-amber-100' },
-    ERROR:    { dot: 'bg-red-500',     badge: 'bg-red-50 text-red-600',        icon: XCircle,      ring: 'ring-red-100' },
-    CRITICAL: { dot: 'bg-red-700',     badge: 'bg-red-100 text-red-800',       icon: Zap,          ring: 'ring-red-200' },
+    INFO:     { bg: 'bg-[#8c00ff]', ring: 'ring-purple-100', badge: 'bg-[#f3eefe] text-[#8c00ff]' },
+    WARNING:  { bg: 'bg-amber-400', ring: 'ring-amber-100',  badge: 'bg-amber-50 text-amber-600' },
+    ERROR:    { bg: 'bg-red-500',   ring: 'ring-red-100',    badge: 'bg-red-50 text-red-600' },
+    CRITICAL: { bg: 'bg-red-700',   ring: 'ring-red-200',    badge: 'bg-red-100 text-red-800' },
 } as const;
+
+const ACTION_ICON: Record<string, LucideIcon> = {
+    recording_created: Clapperboard,
+    recording_streaming_started: Radio,
+    recording_stop_requested: Square,
+    recording_finalized: CheckCircle2,
+    recording_finalize_queued: Send,
+    thumbnail_queued: ImageIcon,
+    thumbnail_event_received: ImageIcon,
+    thumbnail_generated: ImageIcon,
+    thumbnail_failed: XCircle,
+    transcription_queued: FileText,
+    transcription_started: FileText,
+    transcription_completed: CheckCircle2,
+    transcription_failed: XCircle,
+    transcode_planned: Cpu,
+    transcode_skipped: SkipForward,
+    transcode_plan_error: XCircle,
+    track_transcode_complete: Layers,
+    segment_transcode_error: XCircle,
+    hls_playlists_published: Upload,
+    hls_playlist_error: XCircle,
+    hls_transcode_complete: Sparkles,
+    recording_session_orphaned: Unplug,
+    recording_session_resumed: RefreshCw,
+    recording_session_resume_failed: XCircle,
+    recording_deleted: Trash2,
+    recording_restarted: RotateCcw,
+};
+
+const SERVICE_LABEL: Record<string, string> = {
+    lc_nodejs: 'Media Server',
+    workers: 'Worker',
+    lc_fastapi: 'API',
+};
+
+const PIPELINE_STAGES = [
+    { label: 'Session',       icon: Clapperboard, success: ['recording_created', 'recording_finalized'], error: [],                                                              pending: [] },
+    { label: 'Upload',        icon: Upload,        success: ['recording_finalized'],                      error: [],                                                              pending: ['recording_streaming_started'] },
+    { label: 'Transcode',     icon: Cpu,           success: ['hls_transcode_complete'],                   error: ['transcode_plan_error', 'segment_transcode_error', 'hls_playlist_error'], pending: ['transcode_planned'] },
+    { label: 'Thumbnail',     icon: ImageIcon,     success: ['thumbnail_generated'],                      error: ['thumbnail_failed'],                                            pending: ['thumbnail_queued', 'thumbnail_event_received'] },
+    { label: 'Transcription', icon: FileText,      success: ['transcription_completed'],                  error: ['transcription_failed'],                                        pending: ['transcription_queued', 'transcription_started'] },
+];
 
 function toReadableAction(action: string) {
     return action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-function LogEntry({ log, isLast }: { log: AppLog; isLast: boolean }) {
-    const cfg = LOG_LEVEL_CONFIG[log.level] ?? LOG_LEVEL_CONFIG.INFO;
-    const LevelIcon = cfg.icon;
+function formatDelta(ms: number): string {
+    if (ms < 1000) return `+${ms}ms`;
+    if (ms < 60_000) return `+${(ms / 1000).toFixed(1)}s`;
+    const m = Math.floor(ms / 60_000);
+    const s = Math.floor((ms % 60_000) / 1000);
+    return s > 0 ? `+${m}m ${s}s` : `+${m}m`;
+}
+
+function renderMetaValue(v: unknown): string {
+    if (Array.isArray(v)) return v.join(', ');
+    if (typeof v === 'object' && v !== null) return JSON.stringify(v);
+    if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+    return String(v);
+}
+
+function PipelineOverview({ logs }: { logs: AppLog[] }) {
+    const actionSet = new Set(logs.map(l => l.action));
+    return (
+        <div className="flex items-center gap-2 flex-wrap mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            {PIPELINE_STAGES.map((stage, i) => {
+                const hasError   = stage.error.some(a => actionSet.has(a));
+                const hasSuccess = stage.success.some(a => actionSet.has(a));
+                const hasActivity = [...stage.success, ...stage.error, ...stage.pending].some(a => actionSet.has(a));
+
+                let dotColor  = 'bg-slate-200';
+                let textColor = 'text-slate-400';
+                let borderColor = 'border-slate-100';
+                if (hasSuccess && !hasError) { dotColor = 'bg-emerald-400'; textColor = 'text-emerald-700'; borderColor = 'border-emerald-100'; }
+                else if (hasError)           { dotColor = 'bg-red-400';     textColor = 'text-red-600';     borderColor = 'border-red-100'; }
+                else if (hasActivity)        { dotColor = 'bg-amber-400';   textColor = 'text-amber-600';   borderColor = 'border-amber-100'; }
+
+                const StageIcon = stage.icon;
+                return (
+                    <React.Fragment key={stage.label}>
+                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border ${borderColor} ${textColor}`}>
+                            <StageIcon size={11} />
+                            <span className="text-[11px] font-black uppercase tracking-wider">{stage.label}</span>
+                            <div className={`w-2 h-2 rounded-full ${dotColor}`} />
+                        </div>
+                        {i < PIPELINE_STAGES.length - 1 && (
+                            <div className="w-5 h-px bg-slate-200 flex-shrink-0" />
+                        )}
+                    </React.Fragment>
+                );
+            })}
+        </div>
+    );
+}
+
+function LogEntry({ log, prevLog, isLast }: { log: AppLog; prevLog: AppLog | null; isLast: boolean }) {
+    const cfg = LOG_LEVEL_CONFIG[log.level as keyof typeof LOG_LEVEL_CONFIG] ?? LOG_LEVEL_CONFIG.INFO;
+    const ActionIcon = ACTION_ICON[log.action] ?? Activity;
     const metaEntries = Object.entries(log.metadata || {}).filter(([, v]) => v !== null && v !== undefined && v !== '');
     const date = new Date(log.created_at);
+    const deltaMs = prevLog ? date.getTime() - new Date(prevLog.created_at).getTime() : null;
 
     return (
-        <div className="flex gap-5 pb-8 last:pb-0">
-            {/* Timeline dot */}
-            <div className="flex-shrink-0 relative z-10 mt-1">
+        <div className="flex gap-5">
+            {/* Left: dot + connector */}
+            <div className="flex-shrink-0 flex flex-col items-center">
+                {deltaMs !== null && deltaMs >= 0 && (
+                    <div className="flex flex-col items-center">
+                        <div className="w-px h-3 bg-slate-200" />
+                        <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-full text-[9px] font-black text-slate-400">
+                            {formatDelta(deltaMs)}
+                        </span>
+                        <div className="w-px h-3 bg-slate-200" />
+                    </div>
+                )}
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ring-4 ${cfg.ring} bg-white`}>
-                    <div className={`w-5 h-5 rounded-full ${cfg.dot} flex items-center justify-center`}>
-                        <LevelIcon size={11} className="text-white" strokeWidth={3} />
+                    <div className={`w-5 h-5 rounded-full ${cfg.bg} flex items-center justify-center`}>
+                        <ActionIcon size={11} className="text-white" strokeWidth={2.5} />
                     </div>
                 </div>
+                {!isLast && <div className="w-px flex-1 bg-slate-200 mt-1 min-h-[20px]" />}
             </div>
 
-            {/* Content */}
-            <div className="flex-1 min-w-0 pt-1.5">
-                <div className="flex items-start justify-between gap-3 mb-1.5">
+            {/* Right: content */}
+            <div className={`flex-1 min-w-0 pt-1.5 ${isLast ? 'pb-0' : 'pb-5'}`}>
+                <div className="flex items-start justify-between gap-3 mb-1">
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[15px] font-black text-[#0F172A]">
                             {toReadableAction(log.action)}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${cfg.badge}`}>
-                            {log.level}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
-                            {log.service}
+                        {log.level !== 'INFO' && (
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${cfg.badge}`}>
+                                {log.level}
+                            </span>
+                        )}
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-500">
+                            {SERVICE_LABEL[log.service] ?? log.service}
                         </span>
                     </div>
                     <div className="flex-shrink-0 text-right">
-                        <p className="text-[12px] font-bold text-slate-500">
-                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        <p className="text-[11px] font-bold text-slate-500">
+                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </p>
                         <p className="text-[11px] font-medium text-slate-400">
                             {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -964,21 +1087,19 @@ function LogEntry({ log, isLast }: { log: AppLog; isLast: boolean }) {
                     </div>
                 </div>
 
-                <p className="text-[13px] font-medium text-[#64748B] leading-relaxed mb-2">
+                <p className="text-[13px] font-medium text-[#64748B] leading-relaxed">
                     {log.message}
                 </p>
 
                 {metaEntries.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="flex flex-wrap gap-1.5 mt-2">
                         {metaEntries.map(([k, v]) => (
-                            <span key={k} className="px-2.5 py-1 bg-slate-50 border border-slate-100 rounded-xl text-[11px] font-bold text-slate-500">
-                                {k}: <span className="text-slate-700">{String(v)}</span>
+                            <span key={k} className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-lg text-[11px] font-bold text-slate-500">
+                                {k}: <span className="text-[#0F172A]">{renderMetaValue(v)}</span>
                             </span>
                         ))}
                     </div>
                 )}
-
-                {!isLast && <div className="mt-6 border-b border-dashed border-slate-100" />}
             </div>
         </div>
     );

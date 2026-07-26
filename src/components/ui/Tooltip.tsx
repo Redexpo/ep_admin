@@ -14,13 +14,13 @@ export function Tooltip({ text, children, side = "top", className }: TooltipProp
     if (!text) return <>{children}</>;
 
     return (
-        <div className={cn("group/tip relative inline-flex", className)}>
+        <div className={cn("group/tip relative inline-flex hover:z-[200]", className)}>
             {children}
             <div
                 role="tooltip"
                 className={cn(
-                    "pointer-events-none absolute z-[200] whitespace-nowrap rounded-md",
-                    "bg-[#0F172A] px-2 py-1 text-[10px] font-medium leading-none text-white",
+                    "pointer-events-none absolute z-[200] max-w-[220px] break-words rounded-md",
+                    "bg-[#0F172A] px-2 py-1 text-[10px] font-medium leading-snug text-white",
                     "shadow-[0_2px_8px_rgba(0,0,0,0.3)]",
                     "opacity-0 transition-opacity duration-100 group-hover/tip:opacity-100",
                     side === "top"    && "bottom-full left-1/2 mb-2 -translate-x-1/2",
