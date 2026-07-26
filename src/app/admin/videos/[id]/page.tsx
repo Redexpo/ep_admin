@@ -34,6 +34,8 @@ import {
     ImageIcon,
     Cpu,
     Upload,
+    Braces,
+    X,
     type LucideIcon,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -56,6 +58,7 @@ export default function VideoDetailPage() {
     const [logsLoading, setLogsLoading] = useState(false);
     const [logsFetched, setLogsFetched] = useState(false);
     const [logFilter, setLogFilter] = useState<string | null>(null);
+    const [showJsonModal, setShowJsonModal] = useState(false);
 
     const fetchVideoData = useCallback(async () => {
         try {
@@ -227,28 +230,42 @@ export default function VideoDetailPage() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 bg-white/50 backdrop-blur-sm p-1.5 rounded-2xl border border-[#E2E8F0] w-fit">
-                    {[
-                        { id: 'overview', label: 'Overview', icon: Info },
-                        { id: 'transcription', label: 'Transcription', icon: FileText },
-                        { id: 'reports', label: `Reports (${video.reports?.length || 0})`, icon: AlertTriangle, color: video.reports?.length ? 'text-red-500' : '' },
-                        { id: 'views', label: `Views (${video.views_list?.length || video.views || 0})`, icon: Eye },
-                        { id: 'tech', label: 'Technical Info', icon: Activity },
-                        { id: 'logs', label: 'Activity Log', icon: ScrollText },
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-bold transition-all ${activeTab === tab.id
-                                ? 'bg-white text-[#0F172A] shadow-sm border border-[#E2E8F0]'
-                                : 'text-[#64748B] hover:text-[#0F172A] hover:bg-white/50'
-                                }`}
-                        >
-                            <tab.icon size={16} className={tab.color} />
-                            {tab.label}
-                        </button>
-                    ))}
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex gap-2 bg-white/50 backdrop-blur-sm p-1.5 rounded-2xl border border-[#E2E8F0] w-fit">
+                        {[
+                            { id: 'overview', label: 'Overview', icon: Info },
+                            { id: 'transcription', label: 'Transcription', icon: FileText },
+                            { id: 'reports', label: `Reports (${video.reports?.length || 0})`, icon: AlertTriangle, color: video.reports?.length ? 'text-red-500' : '' },
+                            { id: 'views', label: `Views (${video.views_list?.length || video.views || 0})`, icon: Eye },
+                            { id: 'tech', label: 'Technical Info', icon: Activity },
+                            { id: 'logs', label: 'Activity Log', icon: ScrollText },
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[14px] font-bold transition-all ${activeTab === tab.id
+                                    ? 'bg-white text-[#0F172A] shadow-sm border border-[#E2E8F0]'
+                                    : 'text-[#64748B] hover:text-[#0F172A] hover:bg-white/50'
+                                    }`}
+                            >
+                                <tab.icon size={16} className={tab.color} />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => setShowJsonModal(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-[#E2E8F0] text-[#64748B] text-[13px] font-bold hover:border-[#8c00ff] hover:text-[#8c00ff] hover:bg-[#f3eefe] transition-all active:scale-95 shrink-0"
+                    >
+                        <Braces size={15} />
+                        Raw JSON
+                    </button>
                 </div>
+
+                {showJsonModal && (
+                    <JsonModal data={video} onClose={() => setShowJsonModal(false)} />
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Content Area */}
@@ -281,7 +298,8 @@ export default function VideoDetailPage() {
                                     const cameraUrl = video.media_info?.camera?.master
                                         ? `${hlsBase}/camera/master.m3u8${q}`
                                         : null;
-                                    const audioUrl = video.media_info?.audio?.master
+                                    // Check if audio track object exists (may not have a "master" field like camera)
+                                    const audioUrl = video.media_info?.audio && Object.keys(video.media_info.audio).length > 0
                                         ? `${hlsBase}/audio/master.m3u8${q}`
                                         : null;
                                     return (
@@ -1141,6 +1159,88 @@ function LogEntry({ log, prevLog, isLast }: { log: AppLog; prevLog: AppLog | nul
                         ))}
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+function JsonModal({ data, onClose }: { data: object; onClose: () => void }) {
+    const [copied, setCopied] = React.useState(false);
+
+    React.useEffect(() => {
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [onClose]);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    // Dynamically import to avoid SSR issues
+    const [JsonView, setJsonView] = React.useState<React.ComponentType<any> | null>(null);
+    React.useEffect(() => {
+        import('@microlink/react-json-view').then(m => setJsonView(() => m.default));
+    }, []);
+
+    return (
+        <div
+            className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 p-6"
+            onClick={onClose}
+        >
+            <div
+                className="relative w-full max-w-4xl max-h-[85vh] bg-[#0f1117] rounded-[32px] border border-white/10 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0">
+                    <div className="flex items-center gap-2.5">
+                        <Braces size={16} className="text-[#8c00ff]" />
+                        <span className="text-[14px] font-black text-white">Raw JSON</span>
+                        <span className="text-[11px] font-bold text-white/30 ml-1">
+                            {JSON.stringify(data).length.toLocaleString()} chars
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleCopy}
+                            className={`px-3 py-1.5 rounded-xl text-[12px] font-bold transition-all ${
+                                copied
+                                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                    : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white border border-white/10'
+                            }`}
+                        >
+                            {copied ? 'Copied!' : 'Copy JSON'}
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                </div>
+
+                {/* JSON content */}
+                <div className="overflow-y-auto flex-1 p-6">
+                    {JsonView ? (
+                        <JsonView
+                            src={data}
+                            theme="tomorrow"
+                            collapsed={2}
+                            enableClipboard={false}
+                            displayDataTypes={false}
+                            displayObjectSize={true}
+                            style={{ background: 'transparent', fontSize: '13px', fontFamily: 'monospace' }}
+                        />
+                    ) : (
+                        <pre className="text-[12px] text-white/70 font-mono leading-relaxed whitespace-pre-wrap break-all">
+                            {JSON.stringify(data, null, 2)}
+                        </pre>
+                    )}
+                </div>
             </div>
         </div>
     );
