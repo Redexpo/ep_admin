@@ -722,11 +722,102 @@ function InfoTable({ title, icon, data }: { title: string; icon: ReactNode; data
     );
 }
 
-function MediaInfoSection({ mediaInfo }: { mediaInfo: Record<string, any> }) {
-    const { provider, storage_url, sprite_url, screen, camera, audio, combined, ...rest } = mediaInfo;
+function ResolutionsTable({ resolutions }: { resolutions: Record<string, any> }) {
+    const entries = Object.entries(resolutions);
+    if (!entries.length) return null;
+    return (
+        <div className="mt-2">
+            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Resolutions</p>
+            <div className="rounded-xl overflow-hidden border border-[#F1F5F9]">
+                <table className="w-full text-left">
+                    <thead>
+                        <tr className="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                            <th className="px-3 py-2">Quality</th>
+                            <th className="px-3 py-2">Size</th>
+                            <th className="px-3 py-2">Bitrate</th>
+                            <th className="px-3 py-2 max-w-[160px]">Playlist</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F8FAFC]">
+                        {entries.map(([res, info]) => (
+                            <tr key={res} className="text-[11px]">
+                                <td className="px-3 py-2 font-black text-[#8c00ff]">{res}</td>
+                                <td className="px-3 py-2 font-mono text-slate-600">{info.width}×{info.height}</td>
+                                <td className="px-3 py-2 font-mono text-slate-600">{(parseInt(info.bitrate) / 1_000_000).toFixed(1)} Mbps</td>
+                                <td className="px-3 py-2 font-mono text-slate-400 max-w-[160px] truncate" title={info.playlist}>{info.playlist}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
 
-    const topLevel = { provider, storage_url, sprite_url, ...rest };
-    const tracks: { key: string; label: string; color: string; data: Record<string, any> }[] = [
+function ThumbnailsSection({ thumbnails, storageUrl }: { thumbnails: Record<string, any>; storageUrl?: string }) {
+    const entries = Object.entries(thumbnails);
+    if (!entries.length) return null;
+    return (
+        <div className="mt-2">
+            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Thumbnails</p>
+            <div className="flex flex-wrap gap-3">
+                {entries.map(([size, info]) => {
+                    const src = storageUrl && info.path ? `${storageUrl}/${info.path}` : null;
+                    return (
+                        <div key={size} className="flex items-center gap-2 p-2 rounded-xl border border-[#F1F5F9] bg-slate-50">
+                            {src && (
+                                <img src={src} alt={size} className="w-16 h-9 object-cover rounded-lg border border-slate-200" />
+                            )}
+                            <div>
+                                <p className="text-[11px] font-black text-[#8c00ff] uppercase">{size}</p>
+                                <p className="text-[10px] font-mono text-slate-400">{info.width}×{info.height}</p>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+function TrackSection({ title, color, data, storageUrl }: { title: string; color: string; data: Record<string, any>; storageUrl?: string }) {
+    const { resolutions, thumbnails, ...flat } = data;
+    const flatEntries = Object.entries(flat).filter(([, v]) => v !== undefined && v !== null);
+
+    return (
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-[#F1F5F9] bg-slate-50/60">
+                <Activity size={15} className={color} />
+                <span className="text-[13px] font-black text-[#0F172A]">{title}</span>
+                <span className="ml-auto text-[11px] font-bold text-slate-300">{flatEntries.length} fields</span>
+            </div>
+            <div className="px-5 py-3 space-y-1">
+                {flatEntries.map(([key, value], i) => (
+                    <div key={key} className={`flex items-center justify-between py-1.5 ${i < flatEntries.length - 1 ? 'border-b border-[#F8FAFC]' : ''}`}>
+                        <span className="text-[11px] font-medium text-[#475569] tracking-wide">{toLabel(key)}</span>
+                        <CellValue value={value} />
+                    </div>
+                ))}
+                {resolutions && Object.keys(resolutions).length > 0 && (
+                    <ResolutionsTable resolutions={resolutions} />
+                )}
+                {thumbnails && Object.keys(thumbnails).length > 0 && (
+                    <ThumbnailsSection thumbnails={thumbnails} storageUrl={storageUrl} />
+                )}
+            </div>
+        </div>
+    );
+}
+
+function MediaInfoSection({ mediaInfo }: { mediaInfo: Record<string, any> }) {
+    const { provider, storage_url, allow_lowest_resolutions, sprite_url, screen, camera, audio, combined, ...rest } = mediaInfo;
+
+    const topLevel = Object.fromEntries(
+        Object.entries({ provider, storage_url, allow_lowest_resolutions, sprite_url, ...rest })
+            .filter(([, v]) => v !== undefined && v !== null)
+    );
+
+    const tracks = [
         { key: 'screen',   label: 'Screen Track',   color: 'text-[#3b82f6]',  data: screen   },
         { key: 'camera',   label: 'Camera Track',   color: 'text-[#8c00ff]',  data: camera   },
         { key: 'audio',    label: 'Audio Track',    color: 'text-green-500',  data: audio    },
@@ -738,16 +829,17 @@ function MediaInfoSection({ mediaInfo }: { mediaInfo: Record<string, any> }) {
             <InfoTable
                 title="Storage"
                 icon={<HardDrive size={15} className="text-slate-400" />}
-                data={Object.fromEntries(Object.entries(topLevel).filter(([, v]) => v !== undefined && v !== null))}
+                data={topLevel}
             />
             {tracks.length > 0 && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                     {tracks.map(t => (
-                        <InfoTable
+                        <TrackSection
                             key={t.key}
                             title={t.label}
-                            icon={<Activity size={15} className={t.color} />}
+                            color={t.color}
                             data={t.data}
+                            storageUrl={storage_url}
                         />
                     ))}
                 </div>
