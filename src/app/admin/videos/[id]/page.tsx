@@ -425,66 +425,79 @@ export default function VideoDetailPage() {
                                         <table className="w-full text-left">
                                             <thead>
                                                 <tr className="bg-slate-50/60 border-b border-[#F1F5F9]">
-                                                    <th className="px-6 py-4 text-[11px] font-black text-[#64748B] uppercase tracking-wider">#</th>
-                                                    <th className="px-6 py-4 text-[11px] font-black text-[#64748B] uppercase tracking-wider">Viewer</th>
-                                                    <th className="px-6 py-4 text-[11px] font-black text-[#64748B] uppercase tracking-wider text-center">Device</th>
-                                                    <th className="px-6 py-4 text-[11px] font-black text-[#64748B] uppercase tracking-wider">IP Address</th>
-                                                    <th className="px-6 py-4 text-[11px] font-black text-[#64748B] uppercase tracking-wider">Viewed At</th>
+                                                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest w-10">#</th>
+                                                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Viewer</th>
+                                                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Device</th>
+                                                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">IP Address</th>
+                                                    <th className="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Viewed At</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-[#F8FAFC]">
+                                            <tbody className="divide-y divide-slate-50">
                                                 {video.views_list.map((view: ViewRecord, i: number) => (
-                                                    <tr key={i} className="hover:bg-slate-50/40 transition-colors">
-                                                        <td className="px-6 py-4 text-[13px] font-bold text-slate-300">{i + 1}</td>
+                                                    <tr key={i} className="hover:bg-slate-50/60 transition-colors group">
+                                                        <td className="px-6 py-4 text-[12px] font-bold text-slate-300 tabular-nums">{i + 1}</td>
                                                         <td className="px-6 py-4">
-                                                            {view.user_name ? (
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-[14px] font-bold text-[#0F172A]">{view.user_name}</span>
-                                                                    {view.user_email && (
-                                                                        <span className="text-[12px] text-slate-400 font-medium">{view.user_email}</span>
-                                                                    )}
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#8c00ff] to-blue-500 flex items-center justify-center text-white text-[13px] font-black shrink-0">
+                                                                    {view.user_name ? view.user_name[0].toUpperCase() : '?'}
                                                                 </div>
-                                                            ) : (
-                                                                <span className="text-[13px] text-slate-400 italic">Anonymous</span>
-                                                            )}
+                                                                {view.user_name ? (
+                                                                    <div>
+                                                                        <p className="text-[13px] font-bold text-[#0F172A] leading-tight">{view.user_name}</p>
+                                                                        {view.user_email && (
+                                                                            <Tooltip text={view.user_email} side="bottom">
+                                                                                <p className="text-[11px] text-slate-400 font-medium max-w-[160px] truncate">{view.user_email}</p>
+                                                                            </Tooltip>
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-[13px] text-slate-400 italic">Anonymous</span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="px-6 py-4 text-center">
-                                                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider ${view.device_type === 'MOBILE'
-                                                                ? 'bg-blue-50 text-blue-600'
-                                                                : view.device_type === 'DESKTOP'
-                                                                    ? 'bg-purple-50 text-purple-600'
-                                                                    : 'bg-slate-100 text-slate-500'
-                                                                }`}>
+                                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider ${
+                                                                view.device_type === 'MOBILE'
+                                                                    ? 'bg-blue-50 text-blue-600'
+                                                                    : view.device_type === 'DESKTOP'
+                                                                        ? 'bg-purple-50 text-[#8c00ff]'
+                                                                        : 'bg-slate-100 text-slate-500'
+                                                            }`}>
+                                                                {view.device_type === 'MOBILE' ? <Monitor size={11} /> : <Monitor size={11} />}
                                                                 {view.device_type?.toLowerCase() || 'unknown'}
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             {view.ip_doc_id ? (
-                                                                <a
-                                                                    href={`/admin/ips/${view.ip_doc_id}`}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="font-mono text-[13px] text-[#8c00ff] hover:underline"
-                                                                >
-                                                                    {view.ip_address || '—'}
-                                                                </a>
+                                                                <Tooltip text="View IP details" side="top">
+                                                                    <a
+                                                                        href={`/admin/ips/${view.ip_doc_id}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="font-mono text-[12px] text-[#8c00ff] hover:underline"
+                                                                    >
+                                                                        {view.ip_address || '—'}
+                                                                    </a>
+                                                                </Tooltip>
                                                             ) : (
-                                                                <span className="font-mono text-[13px] text-slate-500">
+                                                                <span className="font-mono text-[12px] text-slate-500">
                                                                     {view.ip_address || '—'}
                                                                 </span>
                                                             )}
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             {view.created_at ? (
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-[13px] font-medium text-slate-700">
-                                                                        {new Date(view.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                                    </span>
-                                                                    <span className="text-[11px] text-slate-400 font-medium">
-                                                                        {new Date(view.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                                                                    </span>
-                                                                </div>
-                                                            ) : '—'}
+                                                                <Tooltip text={new Date(view.created_at).toLocaleString()} side="top">
+                                                                    <div>
+                                                                        <p className="text-[13px] font-bold text-slate-700">
+                                                                            {new Date(view.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                        </p>
+                                                                        <p className="text-[11px] text-slate-400 font-medium">
+                                                                            {new Date(view.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                                        </p>
+                                                                    </div>
+                                                                </Tooltip>
+                                                            ) : <span className="text-slate-300">—</span>}
                                                         </td>
                                                     </tr>
                                                 ))}
