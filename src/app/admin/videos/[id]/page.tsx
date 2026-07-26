@@ -747,19 +747,77 @@ function ResolutionsTable({ resolutions }: { resolutions: Record<string, any> })
     );
 }
 
+function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+    const [scale, setScale] = React.useState(1);
+
+    React.useEffect(() => {
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [onClose]);
+
+    const onWheel = (e: React.WheelEvent) => {
+        e.preventDefault();
+        setScale(s => Math.min(4, Math.max(0.5, s - e.deltaY * 0.001)));
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={onClose}
+        >
+            <div
+                className="relative flex items-center justify-center"
+                style={{ width: '70vw', height: '70vh' }}
+                onClick={e => e.stopPropagation()}
+                onWheel={onWheel}
+            >
+                {/* Close button */}
+                <button
+                    onClick={onClose}
+                    className="absolute -top-4 -right-4 z-10 w-9 h-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all"
+                >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                </button>
+
+                {/* Zoom hint */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white/60 text-[11px] font-medium select-none pointer-events-none">
+                    {Math.round(scale * 100)}% · scroll to zoom
+                </div>
+
+                <img
+                    src={src}
+                    alt=""
+                    className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-transform duration-100 cursor-zoom-in select-none"
+                    style={{ transform: `scale(${scale})` }}
+                    draggable={false}
+                />
+            </div>
+        </div>
+    );
+}
+
 function ThumbnailsSection({ thumbnails, storageUrl }: { thumbnails: Record<string, any>; storageUrl?: string }) {
+    const [lightboxSrc, setLightboxSrc] = React.useState<string | null>(null);
     const entries = Object.entries(thumbnails);
     if (!entries.length) return null;
     return (
         <div className="mt-2">
+            {lightboxSrc && <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
             <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Thumbnails</p>
             <div className="flex flex-wrap gap-3">
                 {entries.map(([size, info]) => {
                     const src = storageUrl && info.path ? `${storageUrl}/${info.path}` : null;
                     return (
-                        <div key={size} className="flex items-center gap-2 p-2 rounded-xl border border-[#F1F5F9] bg-slate-50">
+                        <div
+                            key={size}
+                            className="flex items-center gap-2 p-2 rounded-xl border border-[#F1F5F9] bg-slate-50 cursor-pointer hover:border-[#8c00ff]/30 hover:bg-purple-50/30 transition-all"
+                            onClick={() => src && setLightboxSrc(src)}
+                        >
                             {src && (
-                                <img src={src} alt={size} className="w-16 h-9 object-cover rounded-lg border border-slate-200" />
+                                <div className="w-24 h-14 rounded-lg overflow-hidden border border-slate-200 bg-black flex-shrink-0">
+                                    <img src={src} alt={size} className="w-full h-full object-contain" />
+                                </div>
                             )}
                             <div>
                                 <p className="text-[11px] font-black text-[#8c00ff] uppercase">{size}</p>
