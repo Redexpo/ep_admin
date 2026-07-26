@@ -31,18 +31,9 @@ import {
     XCircle,
     Zap,
     Clapperboard,
-    Radio,
-    Square,
-    Send,
     ImageIcon,
     Cpu,
-    Layers,
     Upload,
-    Sparkles,
-    Unplug,
-    RotateCcw,
-    SkipForward,
-    RefreshCw,
     type LucideIcon,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -63,6 +54,7 @@ export default function VideoDetailPage() {
     const [logs, setLogs] = useState<AppLog[]>([]);
     const [logsLoading, setLogsLoading] = useState(false);
     const [logsFetched, setLogsFetched] = useState(false);
+    const [logFilter, setLogFilter] = useState<string | null>(null);
 
     const fetchVideoData = useCallback(async () => {
         try {
@@ -554,21 +546,34 @@ export default function VideoDetailPage() {
                                         <ScrollText size={48} className="text-slate-200 mb-4" />
                                         <p className="font-bold text-slate-400">No activity logged for this recording yet.</p>
                                     </div>
-                                ) : (
-                                    <>
-                                        <PipelineOverview logs={logs} />
-                                        <div>
-                                            {logs.map((log, i) => (
-                                                <LogEntry
-                                                    key={i}
-                                                    log={log}
-                                                    prevLog={i > 0 ? logs[i - 1] : null}
-                                                    isLast={i === logs.length - 1}
-                                                />
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
+                                ) : (() => {
+                                    const activeStage = PIPELINE_STAGES.find(s => s.label === logFilter);
+                                    const stageActions = activeStage
+                                        ? new Set([...activeStage.success, ...activeStage.error, ...activeStage.pending])
+                                        : null;
+                                    const visibleLogs = stageActions
+                                        ? logs.filter(l => stageActions.has(l.action))
+                                        : logs;
+                                    return (
+                                        <>
+                                            <PipelineOverview
+                                                logs={logs}
+                                                activeFilter={logFilter}
+                                                onFilter={label => setLogFilter(prev => prev === label ? null : label)}
+                                            />
+                                            <div>
+                                                {visibleLogs.map((log, i) => (
+                                                    <LogEntry
+                                                        key={log.created_at + log.action}
+                                                        log={log}
+                                                        prevLog={i > 0 ? visibleLogs[i - 1] : null}
+                                                        isLast={i === visibleLogs.length - 1}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         )}
 
@@ -937,34 +942,6 @@ const LOG_LEVEL_CONFIG = {
     CRITICAL: { bg: 'bg-red-700',   ring: 'ring-red-200',    badge: 'bg-red-100 text-red-800' },
 } as const;
 
-const ACTION_ICON: Record<string, LucideIcon> = {
-    recording_created: Clapperboard,
-    recording_streaming_started: Radio,
-    recording_stop_requested: Square,
-    recording_finalized: CheckCircle2,
-    recording_finalize_queued: Send,
-    thumbnail_queued: ImageIcon,
-    thumbnail_event_received: ImageIcon,
-    thumbnail_generated: ImageIcon,
-    thumbnail_failed: XCircle,
-    transcription_queued: FileText,
-    transcription_started: FileText,
-    transcription_completed: CheckCircle2,
-    transcription_failed: XCircle,
-    transcode_planned: Cpu,
-    transcode_skipped: SkipForward,
-    transcode_plan_error: XCircle,
-    track_transcode_complete: Layers,
-    segment_transcode_error: XCircle,
-    hls_playlists_published: Upload,
-    hls_playlist_error: XCircle,
-    hls_transcode_complete: Sparkles,
-    recording_session_orphaned: Unplug,
-    recording_session_resumed: RefreshCw,
-    recording_session_resume_failed: XCircle,
-    recording_deleted: Trash2,
-    recording_restarted: RotateCcw,
-};
 
 const SERVICE_LABEL: Record<string, string> = {
     lc_nodejs: 'Media Server',
@@ -999,103 +976,113 @@ function renderMetaValue(v: unknown): string {
     return String(v);
 }
 
-function PipelineOverview({ logs }: { logs: AppLog[] }) {
+function PipelineOverview({ logs, activeFilter, onFilter }: {
+    logs: AppLog[];
+    activeFilter: string | null;
+    onFilter: (label: string) => void;
+}) {
     const actionSet = new Set(logs.map(l => l.action));
     return (
-        <div className="flex items-center gap-2 flex-wrap mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+        <div className="flex items-center gap-1.5 flex-wrap mb-6">
             {PIPELINE_STAGES.map((stage, i) => {
-                const hasError   = stage.error.some(a => actionSet.has(a));
-                const hasSuccess = stage.success.some(a => actionSet.has(a));
+                const hasError    = stage.error.some(a => actionSet.has(a));
+                const hasSuccess  = stage.success.some(a => actionSet.has(a));
                 const hasActivity = [...stage.success, ...stage.error, ...stage.pending].some(a => actionSet.has(a));
+                const isActive    = activeFilter === stage.label;
 
-                let dotColor  = 'bg-slate-200';
-                let textColor = 'text-slate-400';
-                let borderColor = 'border-slate-100';
-                if (hasSuccess && !hasError) { dotColor = 'bg-emerald-400'; textColor = 'text-emerald-700'; borderColor = 'border-emerald-100'; }
-                else if (hasError)           { dotColor = 'bg-red-400';     textColor = 'text-red-600';     borderColor = 'border-red-100'; }
-                else if (hasActivity)        { dotColor = 'bg-amber-400';   textColor = 'text-amber-600';   borderColor = 'border-amber-100'; }
+                let dotColor = 'bg-slate-300';
+                let baseText = 'text-slate-400';
+                if (hasSuccess && !hasError) { dotColor = 'bg-emerald-400'; baseText = 'text-slate-600'; }
+                else if (hasError)           { dotColor = 'bg-red-400';     baseText = 'text-slate-600'; }
+                else if (hasActivity)        { dotColor = 'bg-amber-400';   baseText = 'text-slate-600'; }
 
                 const StageIcon = stage.icon;
                 return (
                     <React.Fragment key={stage.label}>
-                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border ${borderColor} ${textColor}`}>
-                            <StageIcon size={11} />
-                            <span className="text-[11px] font-black uppercase tracking-wider">{stage.label}</span>
-                            <div className={`w-2 h-2 rounded-full ${dotColor}`} />
-                        </div>
+                        <button
+                            onClick={() => onFilter(stage.label)}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                                isActive
+                                    ? 'bg-[#8c00ff] text-white'
+                                    : `bg-slate-100 ${baseText} hover:bg-slate-200`
+                            }`}
+                        >
+                            <StageIcon size={10} />
+                            {stage.label}
+                            <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white/60' : dotColor}`} />
+                        </button>
                         {i < PIPELINE_STAGES.length - 1 && (
-                            <div className="w-5 h-px bg-slate-200 flex-shrink-0" />
+                            <div className="w-3 h-px bg-slate-200 shrink-0" />
                         )}
                     </React.Fragment>
                 );
             })}
+            {activeFilter && (
+                <button
+                    onClick={() => onFilter(activeFilter)}
+                    className="ml-1 text-[10px] font-bold text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                    Clear
+                </button>
+            )}
         </div>
     );
 }
 
 function LogEntry({ log, prevLog, isLast }: { log: AppLog; prevLog: AppLog | null; isLast: boolean }) {
     const cfg = LOG_LEVEL_CONFIG[log.level as keyof typeof LOG_LEVEL_CONFIG] ?? LOG_LEVEL_CONFIG.INFO;
-    const ActionIcon = ACTION_ICON[log.action] ?? Activity;
     const metaEntries = Object.entries(log.metadata || {}).filter(([, v]) => v !== null && v !== undefined && v !== '');
     const date = new Date(log.created_at);
     const deltaMs = prevLog ? date.getTime() - new Date(prevLog.created_at).getTime() : null;
 
     return (
-        <div className="flex gap-5">
+        <div className="flex gap-3">
             {/* Left: dot + connector */}
-            <div className="flex-shrink-0 flex flex-col items-center">
-                {deltaMs !== null && deltaMs >= 0 && (
-                    <div className="flex flex-col items-center">
-                        <div className="w-px h-3 bg-slate-200" />
-                        <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-full text-[9px] font-black text-slate-400">
-                            {formatDelta(deltaMs)}
-                        </span>
-                        <div className="w-px h-3 bg-slate-200" />
+            <div className="flex flex-col items-center shrink-0 pt-[3px]">
+                <div className={`w-2 h-2 rounded-full shrink-0 ${cfg.bg}`} />
+                {!isLast && (
+                    <div className="flex flex-col items-center flex-1 min-h-[24px]">
+                        <div className="w-px flex-1 bg-slate-100" />
+                        {deltaMs !== null && deltaMs >= 0 && (
+                            <span className="text-[9px] font-bold text-slate-300 my-0.5 select-none leading-none">
+                                {formatDelta(deltaMs)}
+                            </span>
+                        )}
+                        <div className="w-px flex-1 bg-slate-100" />
                     </div>
                 )}
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ring-4 ${cfg.ring} bg-white`}>
-                    <div className={`w-5 h-5 rounded-full ${cfg.bg} flex items-center justify-center`}>
-                        <ActionIcon size={11} className="text-white" strokeWidth={2.5} />
-                    </div>
-                </div>
-                {!isLast && <div className="w-px flex-1 bg-slate-200 mt-1 min-h-[20px]" />}
             </div>
 
             {/* Right: content */}
-            <div className={`flex-1 min-w-0 pt-1.5 ${isLast ? 'pb-0' : 'pb-5'}`}>
-                <div className="flex items-start justify-between gap-3 mb-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[15px] font-black text-[#0F172A]">
+            <div className={`flex-1 min-w-0 ${isLast ? 'pb-0' : 'pb-3'}`}>
+                <div className="flex items-baseline justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                        <span className="text-[13px] font-bold text-[#0F172A] leading-snug">
                             {toReadableAction(log.action)}
                         </span>
                         {log.level !== 'INFO' && (
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${cfg.badge}`}>
+                            <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${cfg.badge}`}>
                                 {log.level}
                             </span>
                         )}
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-100 text-slate-500">
+                        <span className="text-[10px] text-slate-400">
                             {SERVICE_LABEL[log.service] ?? log.service}
                         </span>
                     </div>
-                    <div className="flex-shrink-0 text-right">
-                        <p className="text-[11px] font-bold text-slate-500">
-                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </p>
-                        <p className="text-[11px] font-medium text-slate-400">
-                            {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                        </p>
-                    </div>
+                    <span className="text-[10px] text-slate-400 shrink-0">
+                        {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
                 </div>
 
-                <p className="text-[13px] font-medium text-[#64748B] leading-relaxed">
+                <p className="text-[12px] text-slate-400 mt-0.5 leading-relaxed">
                     {log.message}
                 </p>
 
                 {metaEntries.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2">
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                         {metaEntries.map(([k, v]) => (
-                            <span key={k} className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-lg text-[11px] font-bold text-slate-500">
-                                {k}: <span className="text-[#0F172A]">{renderMetaValue(v)}</span>
+                            <span key={k} className="text-[10px] text-slate-400">
+                                {k}=<span className="text-slate-600 font-medium">{renderMetaValue(v)}</span>
                             </span>
                         ))}
                     </div>
