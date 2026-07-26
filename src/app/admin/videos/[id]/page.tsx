@@ -298,9 +298,9 @@ export default function VideoDetailPage() {
                                     const cameraUrl = video.media_info?.camera?.master
                                         ? `${hlsBase}/camera/master.m3u8${q}`
                                         : null;
-                                    // Check if audio track object exists (may not have a "master" field like camera)
-                                    const audioUrl = video.media_info?.audio && Object.keys(video.media_info.audio).length > 0
-                                        ? `${hlsBase}/audio/master.m3u8${q}`
+                                    // Audio uses index.m3u8 (no master playlist), keyed by audio.hls field
+                                    const audioUrl = video.media_info?.audio?.hls
+                                        ? `${hlsBase}/audio/index.m3u8${q}`
                                         : null;
                                     return (
                                         <AdminVideoPlayer
