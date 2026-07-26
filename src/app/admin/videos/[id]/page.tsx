@@ -572,26 +572,16 @@ export default function VideoDetailPage() {
                     {/* Sidebar Area */}
                     <div className="space-y-6">
                         {/* Summary Stats */}
-                        <div className="bg-white rounded-[40px] border border-[#E2E8F0] p-8 space-y-8">
-                            <h3 className="text-[18px] font-black text-[#0F172A]">Engagement Summary</h3>
-                            <div className="grid grid-cols-2 gap-6">
-                                <StatItem label="Total Views" value={formatNumber(video.views)} icon={Eye} />
-                                <StatItem label="File Size" value={`${(video.file_size / (1024 * 1024)).toFixed(1)} MB`} icon={HardDrive} />
-                            </div>
-                            <div className="pt-8 border-t border-slate-50 space-y-6">
-                                <div className="space-y-1">
-                                    <p className="text-[13px] font-bold text-[#94A3B8]">Uploaded On</p>
-                                    <p className="text-[15px] font-black text-[#0F172A]">{formatDate(video.created_at)}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-[13px] font-bold text-[#94A3B8]">Access Privacy</p>
-                                    <div className="flex items-center gap-2">
-                                        <Shield size={14} className="text-green-500" />
-                                        <p className="text-[15px] font-black text-[#0F172A]">Workspace Internal</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <InfoTable
+                            title="Engagement Summary"
+                            icon={<Activity size={15} className="text-[#8c00ff]" />}
+                            data={{
+                                'Total Views': formatNumber(video.views),
+                                'File Size': `${(video.file_size / (1024 * 1024)).toFixed(1)} MB`,
+                                'Uploaded On': formatDate(video.created_at),
+                                'Access Privacy': 'Workspace Internal',
+                            }}
+                        />
 
                         {/* Creator Info */}
                         <div className="bg-[#0F172A] rounded-[40px] p-8 overflow-hidden relative group">
@@ -632,27 +622,6 @@ export default function VideoDetailPage() {
                 </div>
             </div>
         </AdminLayout>
-    );
-}
-
-function StatItem({ label, value, icon: Icon }: any) {
-    return (
-        <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-[#94A3B8]">
-                <Icon size={14} />
-                <span className="text-[12px] font-black uppercase tracking-wider">{label}</span>
-            </div>
-            <p className="text-[20px] font-black text-[#0F172A]">{value}</p>
-        </div>
-    );
-}
-
-function MetaRow({ label, value }: any) {
-    return (
-        <div className="flex items-center justify-between py-1">
-            <span className="text-[14px] font-bold text-[#94A3B8]">{label}</span>
-            <span className="text-[14px] font-black text-[#0F172A]">{value}</span>
-        </div>
     );
 }
 
