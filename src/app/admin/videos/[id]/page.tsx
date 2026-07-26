@@ -249,20 +249,28 @@ export default function VideoDetailPage() {
                         {activeTab === 'overview' && (
                             <div className="space-y-6">
                                 {/* Video Preview */}
-                                <div className="aspect-video bg-black rounded-[40px] overflow-hidden border border-[#E2E8F0] shadow-xl relative group">
-                                    {video.thumbnail ? (
-                                        <img src={video.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-black text-white/20">
-                                            <Video size={100} strokeWidth={1} />
+                                {(() => {
+                                    const storageUrl = video.media_info?.storage_url;
+                                    const thumbnailSrc = video.thumbnail && storageUrl
+                                        ? `${storageUrl}/${video.thumbnail}`
+                                        : null;
+                                    return (
+                                        <div className="aspect-video bg-black rounded-[40px] overflow-hidden border border-[#E2E8F0] shadow-xl relative group">
+                                            {thumbnailSrc ? (
+                                                <img src={thumbnailSrc} alt="" className="w-full h-full object-cover opacity-80" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-black text-white/20">
+                                                    <Video size={100} strokeWidth={1} />
+                                                </div>
+                                            )}
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <button className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center transform scale-90 group-hover:scale-100 transition-all duration-500">
+                                                    <Play size={32} className="text-white fill-current ml-1" />
+                                                </button>
+                                            </div>
                                         </div>
-                                    )}
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                        <button className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center transform scale-90 group-hover:scale-100 transition-all duration-500">
-                                            <Play size={32} className="text-white fill-current ml-1" />
-                                        </button>
-                                    </div>
-                                </div>
+                                    );
+                                })()}
 
                                 {/* Details Card */}
                                 <div className="bg-white rounded-[40px] border border-[#E2E8F0] p-8 space-y-8">
