@@ -38,9 +38,10 @@ import {
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { AdminVideoPlayer } from '@/components/ui/AdminVideoPlayer';
 import { videoService, Video as VideoType, ViewRecord, AppLog } from '@/services/admin/videoService';
 import { toast } from 'sonner';
-import { DASHBOARD_APP_URL } from '@/lib/constants';
+import { DASHBOARD_APP_URL, MEDIA_API_URL } from '@/lib/constants';
 
 export default function VideoDetailPage() {
     const params = useParams();
@@ -254,27 +255,39 @@ export default function VideoDetailPage() {
                     <div className="lg:col-span-2 space-y-6">
                         {activeTab === 'overview' && (
                             <div className="space-y-6">
-                                {/* Video Preview */}
+                                {/* Video Player */}
                                 {(() => {
                                     const storageUrl = video.media_info?.storage_url;
-                                    const thumbnailSrc = video.thumbnail && storageUrl
+                                    const posterSrc = video.thumbnail && storageUrl
                                         ? `${storageUrl}/${video.thumbnail}`
                                         : null;
-                                    return (
-                                        <div className="aspect-video bg-black rounded-[40px] overflow-hidden border border-[#E2E8F0] shadow-xl relative group">
-                                            {thumbnailSrc ? (
-                                                <img src={thumbnailSrc} alt="" className="w-full h-full object-cover opacity-80" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 to-black text-white/20">
-                                                    <Video size={100} strokeWidth={1} />
-                                                </div>
-                                            )}
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                <button className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center transform scale-90 group-hover:scale-100 transition-all duration-500">
-                                                    <Play size={32} className="text-white fill-current ml-1" />
-                                                </button>
+                                    const token = video.stream_token;
+                                    if (!token || video.status !== 'completed') {
+                                        return (
+                                            <div className="aspect-video bg-black rounded-[40px] overflow-hidden border border-[#E2E8F0] shadow-xl flex items-center justify-center">
+                                                {posterSrc
+                                                    ? <img src={posterSrc} alt="" className="w-full h-full object-cover opacity-60" />
+                                                    : <div className="flex flex-col items-center gap-3 text-white/30">
+                                                        <Video size={80} strokeWidth={1} />
+                                                        <span className="text-[13px] font-bold">Video not ready</span>
+                                                    </div>
+                                                }
                                             </div>
-                                        </div>
+                                        );
+                                    }
+                                    const hlsBase = `${MEDIA_API_URL}/hls/${video.encrypted_id}`;
+                                    const q = `?password_token=${encodeURIComponent(token)}`;
+                                    const screenUrl = `${hlsBase}/screen/master.m3u8${q}`;
+                                    const cameraUrl = video.media_info?.camera?.master
+                                        ? `${hlsBase}/camera/master.m3u8${q}`
+                                        : null;
+                                    return (
+                                        <AdminVideoPlayer
+                                            screenUrl={screenUrl}
+                                            cameraUrl={cameraUrl}
+                                            posterUrl={posterSrc}
+                                            duration={video.duration}
+                                        />
                                     );
                                 })()}
 

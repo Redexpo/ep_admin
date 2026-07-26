@@ -12,6 +12,7 @@ export interface ViewRecord {
 export interface Video {
     id: string;
     encrypted_id: string;
+    stream_token?: string;
     title: string;
     description?: string;
     duration: number;
