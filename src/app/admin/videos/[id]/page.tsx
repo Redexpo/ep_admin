@@ -732,9 +732,16 @@ function CellValue({ value }: { value: any }) {
         return <span className="font-mono text-[12px] font-bold text-[#0F172A]">{value === -1 ? '∞' : value}</span>;
     }
     const str = String(value);
+    const handleCopy = () => {
+        navigator.clipboard.writeText(str);
+        toast.success('Copied!');
+    };
     return (
-        <Tooltip text={str} side="top" className="ml-auto">
-            <span className="text-[12px] font-bold text-[#0F172A] max-w-[180px] truncate block">
+        <Tooltip text={str} side="top">
+            <span
+                onClick={handleCopy}
+                className="text-[12px] font-bold text-[#0F172A] truncate block w-full text-right cursor-pointer hover:text-[#8c00ff] transition-colors"
+            >
                 {str}
             </span>
         </Tooltip>
@@ -763,20 +770,18 @@ function InfoTable({ title, icon, data }: { title: string; icon: ReactNode; data
                 <span className="text-[13px] font-black text-[#0F172A]">{title}</span>
                 <span className="ml-auto text-[11px] font-bold text-slate-300">{entries.length} fields</span>
             </div>
-            <table className="w-full">
-                <tbody>
+            <div>
                     {entries.map(([key, value], i) => (
-                        <tr key={key} className={`${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'} border-b border-[#F8FAFC] last:border-0`}>
-                            <td className="px-5 py-2 text-[11px] font-medium text-[#475569] tracking-wide w-1/2">
+                        <div key={key} className={`flex items-center gap-4 px-5 py-2 border-b border-[#F8FAFC] last:border-0 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
+                            <span className="flex-1 min-w-0 text-[11px] font-medium text-[#475569] tracking-wide">
                                 {toLabel(key)}
-                            </td>
-                            <td className="px-5 py-2 text-right">
+                            </span>
+                            <div className="flex-1 min-w-0 overflow-hidden">
                                 <CellValue value={value} />
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
                     ))}
-                </tbody>
-            </table>
+                </div>
         </div>
     );
 }
@@ -910,9 +915,11 @@ function TrackSection({ title, color, data, storageUrl }: { title: string; color
             </div>
             <div className="px-5 py-3 space-y-1">
                 {flatEntries.map(([key, value], i) => (
-                    <div key={key} className={`flex items-center justify-between py-1.5 ${i < flatEntries.length - 1 ? 'border-b border-[#F8FAFC]' : ''}`}>
-                        <span className="text-[11px] font-medium text-[#475569] tracking-wide">{toLabel(key)}</span>
-                        <CellValue value={value} />
+                    <div key={key} className={`flex items-center gap-4 py-1.5 ${i < flatEntries.length - 1 ? 'border-b border-[#F8FAFC]' : ''}`}>
+                        <span className="flex-1 min-w-0 text-[11px] font-medium text-[#475569] tracking-wide">{toLabel(key)}</span>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                            <CellValue value={value} />
+                        </div>
                     </div>
                 ))}
                 {resolutions && Object.keys(resolutions).length > 0 && (
