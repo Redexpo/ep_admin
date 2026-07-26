@@ -759,7 +759,7 @@ function CellValue({ value }: { value: any }) {
         toast.success('Copied!');
     };
     return (
-        <Tooltip text={str} side="top">
+        <Tooltip text={str} side="top" className="w-full">
             <span
                 onClick={handleCopy}
                 className="text-[12px] font-bold text-[#0F172A] truncate block w-full text-right cursor-pointer hover:text-[#8c00ff] transition-colors"
@@ -798,7 +798,7 @@ function InfoTable({ title, icon, data }: { title: string; icon: ReactNode; data
                             <span className="flex-1 min-w-0 text-[11px] font-medium text-[#475569] tracking-wide">
                                 {toLabel(key)}
                             </span>
-                            <div className="flex-1 min-w-0 overflow-hidden">
+                            <div className="flex-1 min-w-0">
                                 <CellValue value={value} />
                             </div>
                         </div>
@@ -939,7 +939,7 @@ function TrackSection({ title, color, data, storageUrl }: { title: string; color
                 {flatEntries.map(([key, value], i) => (
                     <div key={key} className={`flex items-center gap-4 py-1.5 ${i < flatEntries.length - 1 ? 'border-b border-[#F8FAFC]' : ''}`}>
                         <span className="flex-1 min-w-0 text-[11px] font-medium text-[#475569] tracking-wide">{toLabel(key)}</span>
-                        <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="flex-1 min-w-0">
                             <CellValue value={value} />
                         </div>
                     </div>
