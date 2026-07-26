@@ -33,6 +33,7 @@ import {
     Zap,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { videoService, Video as VideoType, ViewRecord, AppLog } from '@/services/admin/videoService';
 import { toast } from 'sonner';
 import { DASHBOARD_APP_URL } from '@/lib/constants';
@@ -653,9 +654,11 @@ function CellValue({ value }: { value: any }) {
     }
     const str = String(value);
     return (
-        <span className="text-[12px] font-bold text-[#0F172A] max-w-[180px] truncate block ml-auto" title={str}>
-            {str}
-        </span>
+        <Tooltip text={str} side="top" className="ml-auto">
+            <span className="text-[12px] font-bold text-[#0F172A] max-w-[180px] truncate block">
+                {str}
+            </span>
+        </Tooltip>
     );
 }
 
