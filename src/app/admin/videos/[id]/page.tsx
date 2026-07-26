@@ -223,9 +223,6 @@ export default function VideoDetailPage() {
                             <Trash2 size={18} />
                             Delete Video
                         </button>
-                        <button className="px-6 py-2.5 rounded-2xl bg-[#8c00ff] text-white text-[14px] font-bold shadow-lg shadow-purple-100 hover:bg-[#7c3aed] transition-all active:scale-95">
-                            Moderate
-                        </button>
                     </div>
                 </div>
 
