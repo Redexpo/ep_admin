@@ -287,21 +287,6 @@ export default function VideoDetailPage() {
                                         </p>
                                     </div>
 
-                                    {video.tags && video.tags.length > 0 && (
-                                        <div className="pt-8 border-t border-slate-50">
-                                            <h3 className="text-[16px] font-black text-[#0F172A] mb-4 flex items-center gap-2">
-                                                <Tag size={18} className="text-[#8c00ff]" />
-                                                Tags
-                                            </h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {video.tags.map((tag: string, i: number) => (
-                                                    <span key={i} className="px-4 py-2 bg-[#f3eefe] text-[#8c00ff] text-[13px] font-black rounded-2xl border border-purple-100">
-                                                        #{tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
 
                                 {video.media_info && <MediaInfoSection mediaInfo={video.media_info} />}
@@ -616,17 +601,62 @@ export default function VideoDetailPage() {
 
                     {/* Sidebar Area */}
                     <div className="space-y-6">
-                        {/* Summary Stats */}
+                        {/* Engagement Summary */}
                         <InfoTable
                             title="Engagement Summary"
                             icon={<Activity size={15} className="text-[#8c00ff]" />}
                             data={{
                                 'Total Views': formatNumber(video.views),
                                 'File Size': `${(video.file_size / (1024 * 1024)).toFixed(1)} MB`,
+                                'Status': video.status,
                                 'Uploaded On': formatDate(video.created_at),
-                                'Access Privacy': 'Workspace Internal',
+                                'Updated At': video.updated_at ? formatDate(video.updated_at) : '—',
                             }}
                         />
+
+                        {/* Recording State */}
+                        <InfoTable
+                            title="Recording State"
+                            icon={<Shield size={15} className="text-slate-400" />}
+                            data={{
+                                'Active': video.is_active === false ? 'No' : 'Yes',
+                                'Deleted': video.is_deleted ? 'Yes' : 'No',
+                                'Archived': video.is_archived ? 'Yes' : 'No',
+                                'Folder': video.folder ? video.folder.name : '—',
+                                'Folder ID': video.folder?.encrypted_id ?? '—',
+                                'Workspace ID': video.workspace_id ?? '—',
+                            }}
+                        />
+
+                        {/* Tags & Generation */}
+                        {((video.tags && video.tags.length > 0) || (video.supported_generation_type_ids && video.supported_generation_type_ids.length > 0)) && (
+                            <div className="bg-white rounded-[40px] border border-[#E2E8F0] p-6 space-y-4">
+                                {video.tags && video.tags.length > 0 && (
+                                    <div>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">Tags</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {video.tags.map((tag, i) => (
+                                                <span key={i} className="px-2.5 py-1 bg-[#f3eefe] text-[#8c00ff] text-[11px] font-bold rounded-xl border border-purple-100">
+                                                    #{tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {video.supported_generation_type_ids && video.supported_generation_type_ids.length > 0 && (
+                                    <div>
+                                        <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2">Generation Types</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {video.supported_generation_type_ids.map((id, i) => (
+                                                <span key={i} className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-xl">
+                                                    {id}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Creator Info */}
                         <div className="bg-[#0F172A] rounded-[40px] p-8 overflow-hidden relative group">

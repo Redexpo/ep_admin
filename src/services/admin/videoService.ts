@@ -16,14 +16,20 @@ export interface Video {
     description?: string;
     duration: number;
     status: string;
+    is_active?: boolean;
+    is_deleted?: boolean;
+    is_archived?: boolean;
+    workspace_id?: string;
     views: number;
     views_list?: ViewRecord[];
     created_at: string;
+    updated_at?: string;
     creator: string;
     creator_email: string;
     creator_id?: string;
     thumbnail?: string;
     tags?: string[];
+    supported_generation_type_ids?: string[];
     file_size: number;
     folder?: {
         id: string;
@@ -34,7 +40,6 @@ export interface Video {
     chapters?: any[];
     reports?: any[];
     media_info?: any;
-    is_deleted?: boolean;
     allow_transcription?: boolean;
     allow_chapters?: boolean;
     is_transcribed?: boolean;
