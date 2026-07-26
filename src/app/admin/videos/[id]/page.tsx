@@ -281,10 +281,14 @@ export default function VideoDetailPage() {
                                     const cameraUrl = video.media_info?.camera?.master
                                         ? `${hlsBase}/camera/master.m3u8${q}`
                                         : null;
+                                    const audioUrl = video.media_info?.audio?.master
+                                        ? `${hlsBase}/audio/master.m3u8${q}`
+                                        : null;
                                     return (
                                         <AdminVideoPlayer
                                             screenUrl={screenUrl}
                                             cameraUrl={cameraUrl}
+                                            audioUrl={audioUrl}
                                             posterUrl={posterSrc}
                                             duration={video.duration}
                                         />
