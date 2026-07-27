@@ -36,6 +36,8 @@ import {
     Upload,
     Braces,
     X,
+    ChevronDown,
+    ChevronRight,
     type LucideIcon,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -579,14 +581,23 @@ export default function VideoDetailPage() {
                                                 onFilter={label => setLogFilter(prev => prev === label ? null : label)}
                                             />
                                             <div>
-                                                {visibleLogs.map((log, i) => (
-                                                    <LogEntry
-                                                        key={log.created_at + log.action}
-                                                        log={log}
-                                                        prevLog={i > 0 ? visibleLogs[i - 1] : null}
-                                                        isLast={i === visibleLogs.length - 1}
-                                                    />
-                                                ))}
+                                                {buildLogGroups(visibleLogs).map((group) =>
+                                                    group.kind === 'regular' ? (
+                                                        <LogEntry
+                                                            key={group.log.created_at + group.log.action}
+                                                            log={group.log}
+                                                            prevLog={group.prevLog}
+                                                            isLast={group.isLast}
+                                                        />
+                                                    ) : (
+                                                        <MiniLogGroup
+                                                            key={group.logs[0].created_at}
+                                                            logs={group.logs}
+                                                            prevLog={group.prevLog}
+                                                            isLast={group.isLast}
+                                                        />
+                                                    )
+                                                )}
                                             </div>
                                         </>
                                     );
@@ -1094,6 +1105,101 @@ function PipelineOverview({ logs, activeFilter, onFilter }: {
                     Clear
                 </button>
             )}
+        </div>
+    );
+}
+
+type RegularGroup = { kind: 'regular'; log: AppLog; prevLog: AppLog | null; isLast: boolean };
+type MiniGroup    = { kind: 'mini'; logs: AppLog[]; prevLog: AppLog | null; isLast: boolean };
+type LogGroup = RegularGroup | MiniGroup;
+
+function buildLogGroups(logs: AppLog[]): LogGroup[] {
+    const groups: LogGroup[] = [];
+    let i = 0;
+    while (i < logs.length) {
+        if (logs[i].is_mini) {
+            const miniLogs: AppLog[] = [];
+            while (i < logs.length && logs[i].is_mini) {
+                miniLogs.push(logs[i++]);
+            }
+            groups.push({ kind: 'mini', logs: miniLogs, prevLog: null, isLast: false });
+        } else {
+            groups.push({ kind: 'regular', log: logs[i++], prevLog: null, isLast: false });
+        }
+    }
+    for (let g = 0; g < groups.length; g++) {
+        const prev = g > 0 ? groups[g - 1] : null;
+        groups[g].prevLog = prev
+            ? (prev.kind === 'regular' ? prev.log : prev.logs[prev.logs.length - 1])
+            : null;
+        groups[g].isLast = g === groups.length - 1;
+    }
+    return groups;
+}
+
+function MiniLogGroup({ logs, prevLog, isLast }: { logs: AppLog[]; prevLog: AppLog | null; isLast: boolean }) {
+    const [expanded, setExpanded] = React.useState(false);
+    const firstDate = new Date(logs[0].created_at);
+    const lastDate  = new Date(logs[logs.length - 1].created_at);
+    const deltaMs   = prevLog ? firstDate.getTime() - new Date(prevLog.created_at).getTime() : null;
+    const action    = toReadableAction(logs[0].action);
+
+    return (
+        <div className="flex gap-3">
+            <div className="flex flex-col items-center shrink-0 pt-[3px]">
+                <div className="w-2 h-2 rounded-full shrink-0 bg-slate-300" />
+                {!isLast && (
+                    <div className="flex flex-col items-center flex-1 min-h-[24px]">
+                        <div className="w-px flex-1 bg-slate-100" />
+                        {deltaMs !== null && deltaMs >= 0 && (
+                            <span className="text-[9px] font-bold text-slate-300 my-0.5 select-none leading-none">
+                                {formatDelta(deltaMs)}
+                            </span>
+                        )}
+                        <div className="w-px flex-1 bg-slate-100" />
+                    </div>
+                )}
+            </div>
+
+            <div className={`flex-1 min-w-0 ${isLast ? 'pb-0' : 'pb-3'}`}>
+                <button
+                    onClick={() => setExpanded(!expanded)}
+                    className="flex items-center gap-1.5 text-left group w-full"
+                >
+                    {expanded
+                        ? <ChevronDown size={11} className="text-slate-300 shrink-0" />
+                        : <ChevronRight size={11} className="text-slate-300 shrink-0" />
+                    }
+                    <span className="text-[12px] text-slate-400 font-medium">
+                        {logs.length} × {action}
+                    </span>
+                    <span className="text-[10px] text-slate-300 font-mono ml-1">
+                        {firstDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        {logs.length > 1 && ` → ${lastDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
+                    </span>
+                </button>
+
+                {expanded && (
+                    <div className="mt-1.5 ml-1 border-l-2 border-dashed border-slate-100 pl-3 space-y-1">
+                        {logs.map((log, i) => {
+                            const metaEntries = Object.entries(log.metadata || {})
+                                .filter(([, v]) => v !== null && v !== undefined && v !== '');
+                            return (
+                                <div key={i} className="flex items-baseline gap-2 flex-wrap">
+                                    <span className="text-[10px] text-slate-300 font-mono shrink-0">
+                                        {new Date(log.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    </span>
+                                    {metaEntries.map(([k, v]) => (
+                                        <span key={k} className="text-[10px] text-slate-400">
+                                            {k}=<span className="text-slate-500 font-medium">{renderMetaValue(v)}</span>
+                                        </span>
+                                    ))}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

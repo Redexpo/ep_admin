@@ -58,6 +58,7 @@ export interface AppLog {
     action: string;
     message: string;
     metadata: Record<string, any>;
+    is_mini?: boolean;
     created_at: string;
 }
 

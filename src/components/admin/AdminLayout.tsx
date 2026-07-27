@@ -240,6 +240,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
                         {/* Right actions */}
                         <div className="flex items-center gap-1.5">
+                            {/* Grafana */}
+                            <a
+                                href="https://grafana.edithpro.app/dashboards"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-[12px] font-medium hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="20" cy="20" r="20" fill="#F46800"/>
+                                    <path d="M28.5 18.5c-.3-4.6-4.1-8.3-8.8-8.3-3.5 0-6.5 2-8 5H11a2 2 0 0 0 0 4h.2c.4 1.2 1 2.3 1.9 3.2l-.8.8a1.5 1.5 0 0 0 2.1 2.1l.8-.8c1 .8 2.1 1.4 3.4 1.7v1.1a1.5 1.5 0 0 0 3 0v-1.1c1.3-.3 2.5-.9 3.4-1.7l.8.8a1.5 1.5 0 0 0 2.1-2.1l-.8-.8c.8-.9 1.4-2 1.7-3.2H29a2 2 0 0 0 0-4h-.5zm-8.7 7.2a5.7 5.7 0 1 1 0-11.4 5.7 5.7 0 0 1 0 11.4z" fill="white"/>
+                                    <circle cx="19.8" cy="20" r="2.5" fill="white"/>
+                                </svg>
+                                <span>Grafana</span>
+                            </a>
+
                             {/* Search trigger */}
                             <button
                                 className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-400 text-[12px] hover:border-slate-300 hover:text-slate-600 transition-colors"
