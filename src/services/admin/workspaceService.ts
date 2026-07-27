@@ -30,8 +30,22 @@ export interface AdminWorkspaceMember {
     created_at: string;
 }
 
+export interface WorkspaceVideoDefaults {
+    playback_speed: number;
+    auto_transcribe: boolean;
+    recording_visibility: string;
+    allow_download: boolean;
+    allow_comments: boolean;
+    allow_video_replies: boolean;
+    allow_reactions: boolean;
+    allow_transcript: boolean;
+    allow_background_noise_filter: boolean;
+    allow_animated_thumbnail: boolean;
+}
+
 export interface AdminWorkspaceDetail extends AdminWorkspace {
     members: AdminWorkspaceMember[];
+    video_defaults: WorkspaceVideoDefaults | null;
 }
 
 export const adminWorkspaceService = {

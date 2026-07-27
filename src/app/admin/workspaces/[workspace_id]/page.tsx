@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback, use } from 'react';
 import {
     ArrowLeft, Users, Globe, Lock, Star, Archive, Trash2,
-    Shield, UserCheck, UserX, Mail, Calendar, Key, Layers
+    Shield, UserCheck, UserX, Mail, Calendar, Key, Layers, Settings,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { InfoTable } from '@/components/admin/InfoTable';
 import { adminWorkspaceService, AdminWorkspaceDetail } from '@/services/admin/workspaceService';
 import { toast } from 'sonner';
 
@@ -220,6 +221,16 @@ export default function WorkspaceDetailPage({ params }: { params: Promise<{ work
                             )}
                         </div>
                     </div>
+                </div>
+
+                {/* Video Defaults */}
+                <div className="space-y-4">
+                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#8c00ff] px-1">Video Defaults</h3>
+                    <InfoTable
+                        title="Video Defaults"
+                        icon={<Settings size={15} className="text-slate-400" />}
+                        data={data.video_defaults ?? null}
+                    />
                 </div>
             </div>
         </AdminLayout>
