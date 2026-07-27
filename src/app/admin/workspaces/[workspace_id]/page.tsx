@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, use } from 'react';
 import {
-    ArrowLeft, Users, Globe, Lock, Star, Archive, Trash2,
-    Shield, UserCheck, UserX, Mail, Calendar, Key, Layers, Settings,
+    ArrowLeft, Users, Star, Archive, Trash2,
+    Shield, UserCheck, UserX, Mail, Layers, Settings,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -83,7 +83,27 @@ export default function WorkspaceDetailPage({ params }: { params: Promise<{ work
 
     const activeMembers  = data.members.filter(m => m.status === 'active').length;
     const invitedMembers = data.members.filter(m => m.status === 'invited').length;
-    const owners         = data.members.filter(m => m.role === 'OWNER').length;
+    const owners         = data.members.filter(m => m.role.toUpperCase() === 'OWNER').length;
+
+    const workspaceInfoData = {
+        name:               data.name,
+        slug:               `/${data.slug}`,
+        encrypted_id:       data.workspace_encrypted_id,
+        mongo_id:           data.id,
+        owner_email:        data.owner_email,
+        owner_id:           data.owner_id,
+        visibility:         VISIBILITY_LABELS[data.visibility] ?? data.visibility,
+        default_visibility: VISIBILITY_LABELS[data.default_visibility] ?? data.default_visibility,
+        lock_visibility:    data.lock_visibility,
+        member_sharing:     data.allow_member_sharing_override,
+        member_count:       data.member_count,
+        logo:               data.logo,
+        is_default:         data.is_default,
+        is_archived:        data.is_archived,
+        is_deleted:         data.is_deleted,
+        created:            fmt(data.created_at),
+        updated:            fmt(data.updated_at),
+    };
 
     return (
         <AdminLayout>
@@ -155,82 +175,70 @@ export default function WorkspaceDetailPage({ params }: { params: Promise<{ work
                     ))}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* Workspace Info */}
-                    <div className="lg:col-span-5 space-y-4">
+                {/* Workspace Info + Video Defaults side by side */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-3">
                         <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#8c00ff] px-1">Workspace Info</h3>
-                        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm divide-y divide-slate-50">
-                            {[
-                                { icon: <Layers   size={15} />, label: 'Name',           value: data.name },
-                                { icon: <Key      size={15} />, label: 'Encrypted ID',   value: data.workspace_encrypted_id },
-                                { icon: <Globe    size={15} />, label: 'Owner',          value: data.owner_email },
-                                { icon: <Globe    size={15} />, label: 'Default Vis.',   value: VISIBILITY_LABELS[data.default_visibility] ?? data.default_visibility },
-                                { icon: <Lock     size={15} />, label: 'Lock Visibility',value: data.lock_visibility ? 'Yes — all content forced to workspace' : 'No' },
-                                { icon: <Shield   size={15} />, label: 'Member Sharing', value: data.allow_member_sharing_override ? 'Members can override sharing' : 'Owner/Admin only' },
-                                { icon: <Calendar size={15} />, label: 'Created',        value: fmt(data.created_at) },
-                                { icon: <Calendar size={15} />, label: 'Updated',        value: fmt(data.updated_at) },
-                            ].map((row, i) => (
-                                <div key={i} className="flex items-start gap-4 px-6 py-3.5">
-                                    <div className="text-slate-400 shrink-0 mt-0.5">{row.icon}</div>
-                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider w-28 shrink-0 mt-0.5">{row.label}</span>
-                                    <span className="text-[13px] font-semibold text-slate-800 break-all">{row.value}</span>
-                                </div>
-                            ))}
-                        </div>
+                        <InfoTable
+                            title="Workspace Info"
+                            icon={<Layers size={15} className="text-slate-400" />}
+                            data={workspaceInfoData}
+                        />
                     </div>
-
-                    {/* Members */}
-                    <div className="lg:col-span-7 space-y-4">
-                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#8c00ff] px-1">
-                            Members <span className="text-slate-400 normal-case font-semibold">({data.members.length})</span>
-                        </h3>
-                        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                            {data.members.length === 0 ? (
-                                <div className="py-16 flex flex-col items-center gap-3 text-slate-300">
-                                    <Users size={36} strokeWidth={1} />
-                                    <p className="text-[13px] text-slate-400">No members</p>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-slate-50">
-                                    {data.members.map((member, i) => {
-                                        const role = ROLE_CONFIG[member.role] ?? ROLE_CONFIG['MEMBER'];
-                                        const st   = STATUS_CONFIG[member.status] ?? STATUS_CONFIG['active'];
-                                        return (
-                                            <div key={i} className="flex items-center gap-4 px-6 py-4">
-                                                <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-[13px] shrink-0">
-                                                    {member.user_email[0]?.toUpperCase() ?? '?'}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-[13px] font-bold text-slate-900 truncate">{member.user_email}</p>
-                                                    <p className="text-[11px] text-slate-400">
-                                                        {member.joined_at ? `Joined ${fmt(member.joined_at)}` : 'Invite pending'}
-                                                    </p>
-                                                </div>
-                                                <div className="flex items-center gap-2 shrink-0">
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold border ${role.cls}`}>
-                                                        {role.label}
-                                                    </span>
-                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border ${st.cls}`}>
-                                                        {st.icon} {st.label}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
+                    <div className="space-y-3">
+                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#8c00ff] px-1">Video Defaults</h3>
+                        <InfoTable
+                            title="Video Defaults"
+                            icon={<Settings size={15} className="text-slate-400" />}
+                            data={data.video_defaults ?? null}
+                        />
                     </div>
                 </div>
 
-                {/* Video Defaults */}
-                <div className="space-y-4">
-                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#8c00ff] px-1">Video Defaults</h3>
-                    <InfoTable
-                        title="Video Defaults"
-                        icon={<Settings size={15} className="text-slate-400" />}
-                        data={data.video_defaults ?? null}
-                    />
+                {/* Members */}
+                <div className="space-y-3">
+                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#8c00ff] px-1">
+                        Members <span className="text-slate-400 normal-case font-semibold">({data.members.length})</span>
+                    </h3>
+                    <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+                        {data.members.length === 0 ? (
+                            <div className="py-16 flex flex-col items-center gap-3 text-slate-300">
+                                <Users size={36} strokeWidth={1} />
+                                <p className="text-[13px] text-slate-400">No members</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-50">
+                                {data.members.map((member, i) => {
+                                    const role = ROLE_CONFIG[member.role.toUpperCase()] ?? ROLE_CONFIG['MEMBER'];
+                                    const st   = STATUS_CONFIG[member.status] ?? STATUS_CONFIG['active'];
+                                    const subtitle = member.status === 'invited'
+                                        ? 'Invite pending'
+                                        : member.joined_at
+                                            ? `Joined ${fmt(member.joined_at)}`
+                                            : `Member since ${fmt(member.created_at)}`;
+                                    return (
+                                        <div key={i} className="flex items-center gap-4 px-6 py-4">
+                                            <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-[13px] shrink-0">
+                                                {member.user_email[0]?.toUpperCase() ?? '?'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[13px] font-bold text-slate-900 truncate">{member.user_email}</p>
+                                                <p className="text-[11px] text-slate-400">{subtitle}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold border ${role.cls}`}>
+                                                    {role.label}
+                                                </span>
+                                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border ${st.cls}`}>
+                                                    {st.icon} {st.label}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </AdminLayout>

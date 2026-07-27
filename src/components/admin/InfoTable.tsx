@@ -31,7 +31,7 @@ export function CellValue({ value }: { value: any }) {
         <Tooltip text={str} side="top" className="w-full">
             <span
                 onClick={handleCopy}
-                className="text-[12px] font-bold text-[#0F172A] truncate block w-full text-right cursor-pointer hover:text-[#8c00ff] transition-colors"
+                className="text-[12px] font-bold text-[#0F172A] truncate block w-full text-left cursor-pointer hover:text-[#8c00ff] transition-colors"
             >
                 {str}
             </span>
