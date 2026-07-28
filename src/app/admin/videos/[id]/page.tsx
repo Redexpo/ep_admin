@@ -146,7 +146,7 @@ export default function VideoDetailPage() {
 
     const formatDate = (isoString: string) => {
         if (!isoString) return 'N/A';
-        return new Date(isoString).toLocaleDateString('en-US', {
+        return new Date(toUTC(isoString)).toLocaleDateString('en-US', {
             month: 'long',
             day: 'numeric',
             year: 'numeric',
@@ -512,13 +512,13 @@ export default function VideoDetailPage() {
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             {view.created_at ? (
-                                                                <Tooltip text={new Date(view.created_at).toLocaleString()} side="top">
+                                                                <Tooltip text={new Date(toUTC(view.created_at)).toLocaleString()} side="top">
                                                                     <div>
                                                                         <p className="text-[13px] font-bold text-slate-700">
-                                                                            {new Date(view.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                            {new Date(toUTC(view.created_at)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                                         </p>
                                                                         <p className="text-[11px] text-slate-400 font-medium">
-                                                                            {new Date(view.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                                            {new Date(toUTC(view.created_at)).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                                                         </p>
                                                                     </div>
                                                                 </Tooltip>
@@ -966,6 +966,10 @@ const PIPELINE_STAGES = [
     { label: 'Transcription', icon: FileText,      success: ['transcription_completed'],                  error: ['transcription_failed'],                                        pending: ['transcription_queued', 'transcription_started'] },
 ];
 
+function toUTC(s: string) {
+    return s && !s.endsWith('Z') && !s.includes('+') ? s + 'Z' : s;
+}
+
 function toReadableAction(action: string) {
     return action.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -1068,9 +1072,9 @@ function buildLogGroups(logs: AppLog[]): LogGroup[] {
 
 function MiniLogGroup({ logs, prevLog, isLast }: { logs: AppLog[]; prevLog: AppLog | null; isLast: boolean }) {
     const [expanded, setExpanded] = React.useState(false);
-    const firstDate = new Date(logs[0].created_at);
-    const lastDate  = new Date(logs[logs.length - 1].created_at);
-    const deltaMs   = prevLog ? firstDate.getTime() - new Date(prevLog.created_at).getTime() : null;
+    const firstDate = new Date(toUTC(logs[0].created_at));
+    const lastDate  = new Date(toUTC(logs[logs.length - 1].created_at));
+    const deltaMs   = prevLog ? firstDate.getTime() - new Date(toUTC(prevLog.created_at)).getTime() : null;
     const action    = toReadableAction(logs[0].action);
 
     return (
@@ -1116,7 +1120,7 @@ function MiniLogGroup({ logs, prevLog, isLast }: { logs: AppLog[]; prevLog: AppL
                             return (
                                 <div key={i} className="flex items-baseline gap-2 flex-wrap">
                                     <span className="text-[10px] text-slate-300 font-mono shrink-0">
-                                        {new Date(log.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                        {new Date(toUTC(log.created_at)).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                     </span>
                                     {metaEntries.map(([k, v]) => (
                                         <span key={k} className="text-[10px] text-slate-400">
@@ -1136,8 +1140,8 @@ function MiniLogGroup({ logs, prevLog, isLast }: { logs: AppLog[]; prevLog: AppL
 function LogEntry({ log, prevLog, isLast }: { log: AppLog; prevLog: AppLog | null; isLast: boolean }) {
     const cfg = LOG_LEVEL_CONFIG[log.level as keyof typeof LOG_LEVEL_CONFIG] ?? LOG_LEVEL_CONFIG.INFO;
     const metaEntries = Object.entries(log.metadata || {}).filter(([, v]) => v !== null && v !== undefined && v !== '');
-    const date = new Date(log.created_at);
-    const deltaMs = prevLog ? date.getTime() - new Date(prevLog.created_at).getTime() : null;
+    const date = new Date(toUTC(log.created_at));
+    const deltaMs = prevLog ? date.getTime() - new Date(toUTC(prevLog.created_at)).getTime() : null;
 
     return (
         <div className="flex gap-3">
