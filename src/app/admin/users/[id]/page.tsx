@@ -239,7 +239,7 @@ export default function UserDetailPage() {
                         <button
                             onClick={handleImpersonate}
                             disabled={isImpersonating}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-700 text-white text-[14px] font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-700 text-white text-[14px] font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60 cursor-pointer"
                         >
                             <LogIn size={16} /> {isImpersonating ? 'Generating…' : 'Login as User'}
                         </button>

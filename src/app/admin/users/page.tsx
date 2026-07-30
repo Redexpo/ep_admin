@@ -318,7 +318,7 @@ export default function AdminUsersPage() {
                                                             <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl border border-slate-100 shadow-xl z-10 py-1">
                                                                 <button
                                                                     onClick={() => handleImpersonate(user.id)}
-                                                                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-bold text-slate-700 hover:bg-purple-50 hover:text-[#8c00ff] transition-colors"
+                                                                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-bold text-slate-700 hover:bg-purple-50 hover:text-[#8c00ff] transition-colors cursor-pointer"
                                                                 >
                                                                     <LogIn size={14} />
                                                                     Login as User
