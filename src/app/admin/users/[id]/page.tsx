@@ -528,7 +528,7 @@ export default function UserDetailPage() {
                                 viewMode === 'grid' ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 p-8">
                                         {recordings.map((recording) => (
-                                            <div key={recording.id} className="group relative space-y-3 cursor-pointer">
+                                            <Link key={recording.id} href={`/admin/videos/${recording.id}`} className="group relative space-y-3 cursor-pointer block">
                                                 <div className="aspect-video bg-slate-50 rounded-[24px] border border-[#F1F5F9] overflow-hidden relative shadow-sm hover:shadow-xl hover:shadow-purple-100 transition-all duration-500 hover:-translate-y-1">
                                                     {recording.thumbnail_url ? (
                                                         <img src={recording.thumbnail_url} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -562,7 +562,7 @@ export default function UserDetailPage() {
                                                         </span>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </Link>
                                         ))}
                                     </div>
                                 ) : (
@@ -580,7 +580,7 @@ export default function UserDetailPage() {
                                             </thead>
                                             <tbody className="divide-y divide-slate-50">
                                                 {recordings.map((recording) => (
-                                                    <tr key={recording.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer">
+                                                    <tr key={recording.id} onClick={() => router.push(`/admin/videos/${recording.id}`)} className="group hover:bg-slate-50/50 transition-all cursor-pointer">
                                                         <td className="px-6 py-4">
                                                             <div className="flex items-center gap-4">
                                                                 <div className="w-16 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 relative">
@@ -622,9 +622,9 @@ export default function UserDetailPage() {
                                                         </td>
                                                         <td className="px-6 py-4 text-right">
                                                             <div className="flex items-center justify-end gap-1">
-                                                                <button className="p-2 rounded-lg bg-slate-50 hover:bg-white hover:shadow-sm border border-[#E2E8F0] transition-all">
+                                                                <Link href={`/admin/videos/${recording.id}`} onClick={(e) => e.stopPropagation()} className="p-2 rounded-lg bg-slate-50 hover:bg-white hover:shadow-sm border border-[#E2E8F0] transition-all inline-flex">
                                                                     <Eye size={16} className="text-[#64748B]" />
-                                                                </button>
+                                                                </Link>
                                                                 <button className="p-2 rounded-lg bg-slate-50 hover:bg-white hover:shadow-sm border border-[#E2E8F0] transition-all">
                                                                     <MoreVertical size={16} className="text-[#64748B]" />
                                                                 </button>
