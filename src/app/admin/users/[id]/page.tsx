@@ -41,6 +41,8 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import AssignPlanModal from '@/components/admin/AssignPlanModal';
 import { userService, UserDetail, Recording, UserIP, UserDevice } from '@/services/admin/userService';
 import { adminSubscriptionService, AdminSubscription } from '@/services/admin/subscriptionService';
+import { AppLog } from '@/services/admin/videoService';
+import AppLogsPanel from '@/components/admin/AppLogsPanel';
 import { toast } from 'sonner';
 
 export default function UserDetailPage() {
@@ -63,6 +65,10 @@ export default function UserDetailPage() {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [isImpersonating, setIsImpersonating] = useState(false);
+    const [activeSection, setActiveSection] = useState<'recordings' | 'logs'>('recordings');
+    const [logs, setLogs] = useState<AppLog[]>([]);
+    const [isLogsLoading, setIsLogsLoading] = useState(false);
+    const [logsFetched, setLogsFetched] = useState(false);
     const [pagination, setPagination] = useState({
         total: 0,
         totalPages: 0,
@@ -160,6 +166,22 @@ export default function UserDetailPage() {
             toast.error('Failed to generate impersonation link');
         } finally {
             setIsImpersonating(false);
+        }
+    };
+
+    const handleSectionChange = async (section: 'recordings' | 'logs') => {
+        setActiveSection(section);
+        if (section === 'logs' && !logsFetched) {
+            setIsLogsLoading(true);
+            try {
+                const res = await userService.getUserLogs(userId);
+                setLogs(res.data);
+                setLogsFetched(true);
+            } catch {
+                toast.error('Failed to load activity logs');
+            } finally {
+                setIsLogsLoading(false);
+            }
         }
     };
 
@@ -516,28 +538,47 @@ export default function UserDetailPage() {
                 {/* Left column */}
                 <div className="flex-1 min-w-0 space-y-6">
                     <div className="flex items-center justify-between px-2">
-                        <h2 className="text-[22px] font-black tracking-tight text-[#0F172A]">Recent Recordings</h2>
-                        <div className="flex items-center gap-2">
-                            <div className="p-1 bg-slate-100 rounded-xl flex">
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`px-4 py-1.5 transition-all text-[13px] font-bold rounded-lg flex items-center gap-2 ${viewMode === 'grid' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B]'}`}
-                                >
-                                    <LayoutGrid size={16} />
-                                    Grid
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    className={`px-4 py-1.5 transition-all text-[13px] font-bold rounded-lg flex items-center gap-2 ${viewMode === 'list' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B]'}`}
-                                >
-                                    <ListIcon size={16} />
-                                    List
-                                </button>
-                            </div>
+                        <div className="p-1 bg-slate-100 rounded-xl flex">
+                            <button
+                                onClick={() => handleSectionChange('recordings')}
+                                className={`px-4 py-1.5 transition-all text-[13px] font-bold rounded-lg ${activeSection === 'recordings' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B]'}`}
+                            >
+                                Recordings
+                            </button>
+                            <button
+                                onClick={() => handleSectionChange('logs')}
+                                className={`px-4 py-1.5 transition-all text-[13px] font-bold rounded-lg ${activeSection === 'logs' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B]'}`}
+                            >
+                                Logs
+                            </button>
                         </div>
+                        {activeSection === 'recordings' && (
+                            <div className="flex items-center gap-2">
+                                <div className="p-1 bg-slate-100 rounded-xl flex">
+                                    <button
+                                        onClick={() => setViewMode('grid')}
+                                        className={`px-4 py-1.5 transition-all text-[13px] font-bold rounded-lg flex items-center gap-2 ${viewMode === 'grid' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B]'}`}
+                                    >
+                                        <LayoutGrid size={16} />
+                                        Grid
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('list')}
+                                        className={`px-4 py-1.5 transition-all text-[13px] font-bold rounded-lg flex items-center gap-2 ${viewMode === 'list' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B]'}`}
+                                    >
+                                        <ListIcon size={16} />
+                                        List
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="bg-white rounded-[40px] border border-[#E2E8F0] shadow-xl shadow-slate-100/50 overflow-hidden min-h-[600px] flex flex-col">
+                    {activeSection === 'logs' && (
+                        <AppLogsPanel logs={logs} loading={isLogsLoading} emptyMessage="No activity logged for this user yet." />
+                    )}
+
+                    {activeSection === 'recordings' && <div className="bg-white rounded-[40px] border border-[#E2E8F0] shadow-xl shadow-slate-100/50 overflow-hidden min-h-[600px] flex flex-col">
                         <div className="flex-1">
                             {isRecordingsLoading ? (
                                 <div className="p-8 space-y-4">
@@ -708,7 +749,7 @@ export default function UserDetailPage() {
                                 </button>
                             </div>
                         )}
-                    </div>
+                    </div>}
 
                 {/* IP Activity */}
                 <div className="space-y-4">
