@@ -62,6 +62,7 @@ export default function UserDetailPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
     const [showAssignModal, setShowAssignModal] = useState(false);
+    const [isImpersonating, setIsImpersonating] = useState(false);
     const [pagination, setPagination] = useState({
         total: 0,
         totalPages: 0,
@@ -149,6 +150,19 @@ export default function UserDetailPage() {
         fetchUserRecordings(currentPage);
     }, [fetchUserRecordings, currentPage]);
 
+    const handleImpersonate = async () => {
+        setIsImpersonating(true);
+        try {
+            const res = await userService.impersonateUser(userId);
+            await navigator.clipboard.writeText(res.data.url);
+            toast.success('Link copied');
+        } catch {
+            toast.error('Failed to generate impersonation link');
+        } finally {
+            setIsImpersonating(false);
+        }
+    };
+
     const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
@@ -221,6 +235,13 @@ export default function UserDetailPage() {
                             style={{ background: 'linear-gradient(135deg, #8c00ff 0%, #7c3aed 100%)' }}
                         >
                             <Gift size={16} /> Assign Plan
+                        </button>
+                        <button
+                            onClick={handleImpersonate}
+                            disabled={isImpersonating}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-700 text-white text-[14px] font-bold shadow-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60"
+                        >
+                            <LogIn size={16} /> {isImpersonating ? 'Generating…' : 'Login as User'}
                         </button>
                         <button className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#0F172A] text-white text-[14px] font-bold shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95">
                             Quick Actions

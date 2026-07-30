@@ -13,6 +13,7 @@ import {
     Users,
     Clock,
     UserCheck,
+    LogIn,
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { userService, User, UserStats } from '@/services/admin/userService';
@@ -33,6 +34,7 @@ export default function AdminUsersPage() {
         total_pages: 1
     });
     const [stats, setStats] = useState<UserStats | null>(null);
+    const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
     // Debounce search — 500ms after user stops typing
     useEffect(() => {
@@ -78,6 +80,17 @@ export default function AdminUsersPage() {
     useEffect(() => {
         fetchStats();
     }, [fetchStats]);
+
+    const handleImpersonate = async (userId: string) => {
+        setOpenDropdownId(null);
+        try {
+            const res = await userService.impersonateUser(userId);
+            await navigator.clipboard.writeText(res.data.url);
+            toast.success('Link copied');
+        } catch {
+            toast.error('Failed to generate impersonation link');
+        }
+    };
 
     // Format numbers
     const formatNumber = (num: number) => {
@@ -294,9 +307,25 @@ export default function AdminUsersPage() {
                                                     <Link href={`/admin/users/${user.id}`} className="p-2 rounded-lg bg-slate-50 hover:bg-white hover:shadow-sm border border-[#E2E8F0] transition-all">
                                                         <Eye size={16} className="text-[#64748B]" />
                                                     </Link>
-                                                    <button className="p-2 rounded-lg bg-slate-50 hover:bg-white hover:shadow-sm border border-[#E2E8F0] transition-all">
-                                                        <MoreVertical size={16} className="text-[#64748B]" />
-                                                    </button>
+                                                    <div className="relative">
+                                                        <button
+                                                            onClick={() => setOpenDropdownId(openDropdownId === user.id ? null : user.id)}
+                                                            className="p-2 rounded-lg bg-slate-50 hover:bg-white hover:shadow-sm border border-[#E2E8F0] transition-all"
+                                                        >
+                                                            <MoreVertical size={16} className="text-[#64748B]" />
+                                                        </button>
+                                                        {openDropdownId === user.id && (
+                                                            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl border border-slate-100 shadow-xl z-10 py-1">
+                                                                <button
+                                                                    onClick={() => handleImpersonate(user.id)}
+                                                                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-bold text-slate-700 hover:bg-purple-50 hover:text-[#8c00ff] transition-colors"
+                                                                >
+                                                                    <LogIn size={14} />
+                                                                    Login as User
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>

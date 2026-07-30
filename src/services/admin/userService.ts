@@ -127,4 +127,8 @@ export const userService = {
         const response = await api.get(`/api/v1/admin/users/${id}/devices`);
         return response.data;
     },
+    impersonateUser: async (id: string): Promise<{ data: { url: string } }> => {
+        const response = await api.post(`/api/v1/admin/users/${id}/impersonate`);
+        return response.data;
+    },
 };
