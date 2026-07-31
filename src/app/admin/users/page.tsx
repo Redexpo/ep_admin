@@ -287,14 +287,17 @@ export default function AdminUsersPage() {
                                                 <span className="text-[13px] text-[#64748B]">{formattedDate}</span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                {user.last_login ? (
-                                                    <span className="text-[13px] text-[#64748B]">
-                                                        {new Date(user.last_login).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                        <span className="text-[11px] text-slate-400 ml-1">
-                                                            {new Date(user.last_login).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                {user.last_login ? (() => {
+                                                    const d = new Date(user.last_login.endsWith('Z') ? user.last_login : user.last_login + 'Z');
+                                                    return (
+                                                        <span className="text-[13px] text-[#64748B]">
+                                                            {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            <span className="text-[11px] text-slate-400 ml-1">
+                                                                {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
                                                         </span>
-                                                    </span>
-                                                ) : (
+                                                    );
+                                                })() : (
                                                     <span className="text-[13px] text-slate-300">—</span>
                                                 )}
                                             </td>
