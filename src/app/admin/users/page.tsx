@@ -290,6 +290,9 @@ export default function AdminUsersPage() {
                                                 {user.last_login ? (
                                                     <span className="text-[13px] text-[#64748B]">
                                                         {new Date(user.last_login).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        <span className="text-[11px] text-slate-400 ml-1">
+                                                            {new Date(user.last_login).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
                                                     </span>
                                                 ) : (
                                                     <span className="text-[13px] text-slate-300">—</span>
