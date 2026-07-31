@@ -515,7 +515,7 @@ export default function AdminBlogPage() {
                                                     <RowMenu
                                                         post={post}
                                                         onEdit={() => router.push(`/admin/blog/${post.id}`)}
-                                                        onView={() => window.open(`/blog/${post.slug}`, '_blank')}
+                                                        onView={() => window.open(`${MAIN_APP_URL}/blog/${post.slug}?SOURCE=AdminPanel`, '_blank')}
                                                         onDelete={() => setDeleteTarget(post)}
                                                         onShare={() => setShareTarget(post)}
                                                     />
