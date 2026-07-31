@@ -2,6 +2,36 @@ import api from "../api";
 
 export type BlogPostStatus = "draft" | "scheduled" | "published" | "archived";
 
+export interface DailyStatEntry {
+    date: string;
+    total?: number;
+    direct?: number;
+    linkedin?: number;
+    twitter?: number;
+    facebook?: number;
+    instagram?: number;
+    reddit?: number;
+    tiktok?: number;
+    [key: string]: string | number | undefined;
+}
+
+export interface TopIP {
+    ip: string;
+    count: number;
+    sources: string[];
+    first_seen: string | null;
+    last_seen: string | null;
+    country: string | null;
+    city: string | null;
+}
+
+export interface BlogAnalyticsData {
+    total_views: number;
+    views_by_source: Record<string, number>;
+    daily_stats: DailyStatEntry[];
+    top_ips: TopIP[];
+}
+
 export interface BlogAuthor {
     id: string;
     name: string;
@@ -195,6 +225,11 @@ export const adminBlogService = {
             params: { slug, exclude_id },
         });
         return response.data;
+    },
+
+    async getAnalytics(postId: string): Promise<BlogAnalyticsData> {
+        const res = await api.get(`/api/v1/admin/blog/posts/${postId}/analytics`);
+        return res.data;
     },
 };
 
