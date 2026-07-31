@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation';
 import {
     Plus, Search, Eye, Edit, Trash2, MoreVertical, ChevronLeft, ChevronRight,
     Newspaper, CheckCircle2, FileEdit, Eye as EyeIcon, Star, Clock, Calendar,
+    Share2, X, Copy, Check,
 } from 'lucide-react';
+import { MAIN_APP_URL } from '@/lib/constants';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/admin/AdminLayout';
 import DeleteBlogModal from '@/components/admin/blog/DeleteBlogModal';
@@ -51,11 +53,129 @@ function formatNumber(n: number) {
     return new Intl.NumberFormat('en-US').format(n);
 }
 
-function RowMenu({ post, onEdit, onView, onDelete }: {
+const PLATFORMS = [
+    {
+        key: 'linkedin', label: 'LinkedIn', color: '#0077B5',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4V9h4v2a6 6 0 0 1 2-3zM2 9h4v12H2zm2-6a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
+            </svg>
+        ),
+    },
+    {
+        key: 'twitter', label: 'Twitter / X', color: '#000000',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+        ),
+    },
+    {
+        key: 'facebook', label: 'Facebook', color: '#1877F2',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+            </svg>
+        ),
+    },
+    {
+        key: 'instagram', label: 'Instagram', color: '#E4405F',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                <circle cx="12" cy="12" r="4"/>
+                <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+        ),
+    },
+    {
+        key: 'reddit', label: 'Reddit', color: '#FF4500',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
+                <circle cx="12" cy="12" r="10"/>
+                <path fill="white" d="M21 12a1.5 1.5 0 0 0-2.55-1.06c-1.28-.86-3.02-1.42-4.95-1.5l.84-3.96 2.74.58a1.07 1.07 0 1 0 1.1-1.06 1.06 1.06 0 0 0-.98.65L14.5 5.1l-.97 4.54c-1.98.07-3.76.63-5.06 1.5A1.5 1.5 0 1 0 7.1 13.6a2.8 2.8 0 0 0-.04.4c0 2.2 2.64 3.99 5.94 3.99s5.94-1.79 5.94-4a3 3 0 0 0-.04-.39A1.5 1.5 0 0 0 21 12zm-13 1.5a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm5.5 2.65c-.73.73-2.27.73-3 0a.25.25 0 0 1 .35-.35c.5.5 1.8.5 2.3 0a.25.25 0 0 1 .35.35zm-.23-1.65a1 1 0 1 1 2 0 1 1 0 0 1-2 0z"/>
+            </svg>
+        ),
+    },
+    {
+        key: 'tiktok', label: 'TikTok', color: '#010101',
+        icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V9.07a8.16 8.16 0 0 0 4.77 1.52V7.15a4.85 4.85 0 0 1-1-.46z"/>
+            </svg>
+        ),
+    },
+];
+
+function ShareModal({ post, onClose }: { post: BlogPostListItem; onClose: () => void }) {
+    const [copied, setCopied] = useState<string | null>(null);
+
+    const handleCopy = async (platformKey: string) => {
+        const url = `${MAIN_APP_URL}/blog/${post.slug}?SOURCE=${platformKey}`;
+        await navigator.clipboard.writeText(url);
+        setCopied(platformKey);
+        toast.success(`Link copied for ${PLATFORMS.find(p => p.key === platformKey)?.label}`);
+        setTimeout(() => setCopied(null), 2000);
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+            <div
+                className="relative w-full max-w-md rounded-3xl border border-slate-100 bg-white p-8 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <button
+                    onClick={onClose}
+                    className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100"
+                >
+                    <X size={16} />
+                </button>
+
+                <div className="mb-6">
+                    <h2 className="text-[20px] font-black text-slate-900">Share Post</h2>
+                    <p className="mt-1 line-clamp-1 text-[13px] text-slate-500">{post.title}</p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                    {PLATFORMS.map((p) => (
+                        <button
+                            key={p.key}
+                            onClick={() => handleCopy(p.key)}
+                            className="group flex flex-col items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-4 transition-all hover:border-slate-200 hover:bg-white hover:shadow-md active:scale-95"
+                        >
+                            <div
+                                className="flex h-11 w-11 items-center justify-center rounded-xl text-white transition-transform group-hover:scale-110"
+                                style={{ backgroundColor: p.color }}
+                            >
+                                {copied === p.key ? <Check size={20} /> : p.icon}
+                            </div>
+                            <span className="text-[11px] font-semibold text-slate-600">{p.label}</span>
+                        </button>
+                    ))}
+                </div>
+
+                <div className="mt-6 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
+                    <span className="flex-1 truncate font-mono text-[11px] text-slate-500">
+                        {MAIN_APP_URL}/blog/{post.slug}
+                    </span>
+                    <button
+                        onClick={() => handleCopy('direct')}
+                        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 shadow-sm hover:bg-slate-100"
+                    >
+                        <Copy size={12} /> Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function RowMenu({ post, onEdit, onView, onDelete, onShare }: {
     post: BlogPostListItem;
     onEdit: () => void;
     onView: () => void;
     onDelete: () => void;
+    onShare: () => void;
 }) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -91,6 +211,12 @@ function RowMenu({ post, onEdit, onView, onDelete }: {
                     >
                         <Eye size={14} className="text-slate-500" /> View on site
                     </button>
+                    <button
+                        onClick={() => { onShare(); setOpen(false); }}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                        <Share2 size={14} className="text-slate-500" /> Share
+                    </button>
                     <div className="my-1 h-px bg-slate-100" />
                     <button
                         onClick={() => { onDelete(); setOpen(false); }}
@@ -116,6 +242,7 @@ export default function AdminBlogPage() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [deleteTarget, setDeleteTarget] = useState<BlogPostListItem | null>(null);
+    const [shareTarget, setShareTarget] = useState<BlogPostListItem | null>(null);
 
     useEffect(() => {
         const t = setTimeout(() => {
@@ -390,6 +517,7 @@ export default function AdminBlogPage() {
                                                         onEdit={() => router.push(`/admin/blog/${post.id}`)}
                                                         onView={() => window.open(`/blog/${post.slug}`, '_blank')}
                                                         onDelete={() => setDeleteTarget(post)}
+                                                        onShare={() => setShareTarget(post)}
                                                     />
                                                 </div>
                                             </td>
@@ -435,6 +563,10 @@ export default function AdminBlogPage() {
                 postId={deleteTarget?.id ?? null}
                 postTitle={deleteTarget?.title}
             />
+
+            {shareTarget && (
+                <ShareModal post={shareTarget} onClose={() => setShareTarget(null)} />
+            )}
         </AdminLayout>
     );
 }
