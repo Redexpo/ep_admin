@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import AdminLayout from '@/components/admin/AdminLayout';
 import LineChartTooltip from '@/components/admin/charts/LineChartTooltip';
+import SourceDonutChart from '@/components/admin/charts/SourceDonutChart';
 import {
     adminBlogService,
     type BlogAnalyticsData,
@@ -184,7 +185,8 @@ export default function BlogAnalyticsPage() {
                             />
                         </div>
 
-                        {/* Views over time */}
+                        {/* Views over time + Source breakdown */}
+                        <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
                         <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
                             <div className="mb-4 flex items-center justify-between">
                                 <div>
@@ -247,6 +249,14 @@ export default function BlogAnalyticsPage() {
                                 </ResponsiveContainer>
                             )}
                         </div>
+
+                        {/* Source breakdown donut */}
+                        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                            <h3 className="mb-1 text-[15px] font-bold text-slate-900">Traffic sources</h3>
+                            <p className="mb-4 text-[12px] text-slate-400">Where your readers come from</p>
+                            <SourceDonutChart views_by_source={analytics.views_by_source} />
+                        </div>
+                        </div>{/* end grid */}
 
                         {/* Top IPs */}
                         <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
