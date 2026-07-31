@@ -448,7 +448,7 @@ export default function AdminBlogPage() {
                                                     </div>
                                                     <div className="min-w-0">
                                                         <button
-                                                            onClick={() => router.push(`/admin/blog/${post.id}`)}
+                                                            onClick={() => router.push(`/admin/blog/${post.id}/analytics`)}
                                                             className="text-left"
                                                         >
                                                             <p className="line-clamp-1 text-[14px] font-bold text-slate-900 hover:text-[#8c00ff]">
