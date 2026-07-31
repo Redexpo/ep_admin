@@ -92,6 +92,7 @@ export default function BlogAnalyticsPage() {
     const [postTitle, setPostTitle] = useState<string>('');
     const [analytics, setAnalytics] = useState<BlogAnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [days, setDays] = useState(30);
 
     useEffect(() => {
         let cancelled = false;
@@ -120,8 +121,14 @@ export default function BlogAnalyticsPage() {
             ? (Object.entries(analytics.views_by_source).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—')
             : '—';
 
-    const activeSources = analytics
-        ? Object.keys(analytics.views_by_source).filter((s) => (analytics.views_by_source[s] ?? 0) > 0)
+    const chartData = analytics
+        ? analytics.daily_stats.slice(-days)
+        : [];
+
+    const activeSources = chartData.length
+        ? Object.keys(analytics!.views_by_source).filter((s) =>
+              chartData.some((d) => Number(d[s] ?? 0) > 0)
+          )
         : [];
 
     return (
@@ -179,15 +186,31 @@ export default function BlogAnalyticsPage() {
 
                         {/* Views over time */}
                         <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-                            <h3 className="mb-4 text-[15px] font-bold text-slate-900">Views over time</h3>
-                            {analytics.daily_stats.length === 0 ? (
+                            <div className="mb-4 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-[15px] font-bold text-slate-900">Views over time</h3>
+                                    <p className="mt-0.5 text-[12px] text-slate-400">Last {days} days</p>
+                                </div>
+                                <div className="flex gap-0.5 rounded-xl bg-slate-100 p-1">
+                                    {[7, 30, 90].map((d) => (
+                                        <button
+                                            key={d}
+                                            onClick={() => setDays(d)}
+                                            className={`rounded-lg px-3 py-1.5 text-[12px] font-black transition-all ${days === d ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                                        >
+                                            {d}D
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            {chartData.length === 0 ? (
                                 <div className="flex h-56 items-center justify-center text-[13px] text-slate-400">
                                     No data yet
                                 </div>
                             ) : (
                                 <ResponsiveContainer width="100%" height={280}>
                                     <LineChart
-                                        data={analytics.daily_stats}
+                                        data={chartData}
                                         margin={{ top: 4, right: 16, left: 0, bottom: 0 }}
                                     >
                                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
