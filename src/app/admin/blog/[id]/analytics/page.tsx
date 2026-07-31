@@ -15,6 +15,7 @@ import {
     ResponsiveContainer,
 } from 'recharts';
 import AdminLayout from '@/components/admin/AdminLayout';
+import LineChartTooltip from '@/components/admin/charts/LineChartTooltip';
 import {
     adminBlogService,
     type BlogAnalyticsData,
@@ -53,6 +54,7 @@ function SourceBadge({ source }: { source: string }) {
         </span>
     );
 }
+
 
 function StatCard({
     label,
@@ -202,11 +204,8 @@ export default function BlogAnalyticsPage() {
                                             allowDecimals={false}
                                         />
                                         <Tooltip
-                                            contentStyle={{
-                                                borderRadius: '12px',
-                                                border: '1px solid #e2e8f0',
-                                                fontSize: '12px',
-                                            }}
+                                            content={<LineChartTooltip />}
+                                            cursor={{ stroke: '#e2e8f0', strokeWidth: 1, strokeDasharray: '4 2' }}
                                         />
                                         <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }} />
                                         {activeSources.map((source) => (
