@@ -16,7 +16,7 @@ const FALLBACK_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#3b82f6'];
 
 interface SliceTooltipProps {
     active?: boolean;
-    payload?: Array<{ name: string; value: number; payload: { percent: number; color: string } }>;
+    payload?: Array<{ name: string; value: number; percent: number; payload: { color: string } }>;
 }
 
 function SliceTooltip({ active, payload }: SliceTooltipProps) {
@@ -33,7 +33,7 @@ function SliceTooltip({ active, payload }: SliceTooltipProps) {
                     {item.value.toLocaleString()}
                 </span>
                 <span className="text-[11px] text-slate-400">
-                    {(item.payload.percent * 100).toFixed(1)}%
+                    {(item.percent * 100).toFixed(1)}%
                 </span>
             </div>
         </div>
