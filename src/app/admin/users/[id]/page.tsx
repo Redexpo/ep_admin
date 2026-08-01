@@ -1024,7 +1024,7 @@ export default function UserDetailPage() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <Link
-                                                        href={`/admin/workspaces/${ws.workspace_encrypted_id}`}
+                                                        href={`/admin/workspaces/${ws.id}`}
                                                         className="inline-flex items-center gap-1 text-[11px] font-bold text-[#8c00ff] hover:underline"
                                                     >
                                                         View <ExternalLink size={10} />
