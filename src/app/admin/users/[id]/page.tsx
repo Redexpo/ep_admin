@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AssignPlanModal from '@/components/admin/AssignPlanModal';
-import { userService, UserDetail, Recording, UserIP, UserDevice } from '@/services/admin/userService';
+import { userService, UserDetail, Recording, UserIP, UserDevice, UserWorkspace } from '@/services/admin/userService';
 import { adminSubscriptionService, AdminSubscription } from '@/services/admin/subscriptionService';
 import { AppLog } from '@/services/admin/videoService';
 import AppLogsPanel from '@/components/admin/AppLogsPanel';
@@ -61,6 +61,8 @@ export default function UserDetailPage() {
     const [isSubsLoading, setIsSubsLoading] = useState(true);
     const [devices, setDevices] = useState<UserDevice[]>([]);
     const [isDevicesLoading, setIsDevicesLoading] = useState(true);
+    const [workspaces, setWorkspaces] = useState<UserWorkspace[]>([]);
+    const [isWorkspacesLoading, setIsWorkspacesLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -145,12 +147,25 @@ export default function UserDetailPage() {
         }
     }, [userId]);
 
+    const fetchUserWorkspaces = useCallback(async () => {
+        try {
+            setIsWorkspacesLoading(true);
+            const response = await userService.getUserWorkspaces(userId);
+            if (response.data) setWorkspaces(response.data);
+        } catch {
+            // non-critical
+        } finally {
+            setIsWorkspacesLoading(false);
+        }
+    }, [userId]);
+
     useEffect(() => {
         fetchUserData();
         fetchUserIPs();
         fetchUserSubscriptions();
         fetchUserDevices();
-    }, [fetchUserData, fetchUserIPs, fetchUserSubscriptions, fetchUserDevices]);
+        fetchUserWorkspaces();
+    }, [fetchUserData, fetchUserIPs, fetchUserSubscriptions, fetchUserDevices, fetchUserWorkspaces]);
 
     useEffect(() => {
         fetchUserRecordings(currentPage);
@@ -907,6 +922,113 @@ export default function UserDetailPage() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className="text-[11px] text-slate-500 whitespace-nowrap">{fmtTs(device.last_seen_at)}</span>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Workspaces */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                        <h2 className="text-[22px] font-black tracking-tight text-[#0F172A]">Workspaces</h2>
+                        <span className="text-[12px] font-bold text-slate-400 bg-slate-100 px-3 py-1 rounded-xl">
+                            {isWorkspacesLoading ? '…' : `${workspaces.length} workspace${workspaces.length !== 1 ? 's' : ''}`}
+                        </span>
+                    </div>
+
+                    <div className="bg-white rounded-[32px] border border-[#E2E8F0] shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-slate-50/60 border-b border-slate-100">
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Workspace</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Role</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Owner</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Members</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Joined</th>
+                                        <th className="px-6 py-3.5 text-[11px] font-bold text-slate-400 uppercase tracking-widest"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {isWorkspacesLoading ? (
+                                        Array(2).fill(0).map((_, i) => (
+                                            <tr key={i} className="animate-pulse">
+                                                <td className="px-6 py-4"><div className="h-4 w-40 bg-slate-100 rounded-full" /></td>
+                                                <td colSpan={5} className="px-6 py-4"><div className="h-4 bg-slate-100 rounded-lg" /></td>
+                                            </tr>
+                                        ))
+                                    ) : workspaces.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="px-6 py-14 text-center">
+                                                <Building2 size={32} className="mx-auto text-slate-200 mb-3" />
+                                                <p className="text-[13px] text-slate-400 font-medium">Not a member of any workspace</p>
+                                            </td>
+                                        </tr>
+                                    ) : workspaces.map((ws) => {
+                                        const ROLE_CHIP: Record<string, string> = {
+                                            owner: 'bg-purple-50 text-purple-700',
+                                            admin: 'bg-blue-50 text-blue-700',
+                                            member: 'bg-slate-100 text-slate-600',
+                                        };
+                                        const STATUS_CHIP: Record<string, string> = {
+                                            active: 'bg-emerald-50 text-emerald-700',
+                                            invited: 'bg-amber-50 text-amber-700',
+                                        };
+                                        const roleChip = ROLE_CHIP[ws.role ?? ''] ?? 'bg-slate-100 text-slate-600';
+                                        const statusChip = STATUS_CHIP[ws.status ?? ''] ?? 'bg-slate-100 text-slate-500';
+                                        const isCurrentWs = ws.workspace_encrypted_id === user.current_workspace_id;
+                                        const joinedDate = ws.joined_at
+                                            ? new Date(ws.joined_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                            : '—';
+                                        return (
+                                            <tr key={ws.id} className={`hover:bg-slate-50/60 transition-colors ${isCurrentWs ? 'bg-purple-50/30' : ''}`}>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1 min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[13px] font-bold text-[#0F172A] truncate max-w-[180px]">{ws.name}</span>
+                                                            {isCurrentWs && (
+                                                                <span className="text-[10px] font-black bg-[#8c00ff] text-white px-2 py-0.5 rounded-lg shrink-0">Current</span>
+                                                            )}
+                                                            {ws.is_archived && (
+                                                                <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-lg shrink-0">Archived</span>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-[11px] text-slate-400 font-mono truncate max-w-[180px]">{ws.slug}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold capitalize w-fit ${roleChip}`}>
+                                                            {ws.role ?? '—'}
+                                                        </span>
+                                                        {ws.status && ws.status !== 'active' && (
+                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold capitalize w-fit ${statusChip}`}>
+                                                                {ws.status}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[12px] text-slate-500 truncate block max-w-[160px]">{ws.owner_email ?? '—'}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[13px] font-bold text-[#0F172A]">{ws.member_count}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-[11px] text-slate-500 whitespace-nowrap">{joinedDate}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <Link
+                                                        href={`/admin/workspaces/${ws.workspace_encrypted_id}`}
+                                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#8c00ff] hover:underline"
+                                                    >
+                                                        View <ExternalLink size={10} />
+                                                    </Link>
                                                 </td>
                                             </tr>
                                         );

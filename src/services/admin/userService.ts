@@ -92,6 +92,23 @@ export interface UserDevice {
     last_seen_at: string | null;
 }
 
+export interface UserWorkspace {
+    id: string;
+    workspace_encrypted_id: string;
+    name: string;
+    slug: string;
+    is_default: boolean;
+    is_archived: boolean;
+    visibility: string;
+    owner_id: string;
+    owner_email: string | null;
+    role: string | null;
+    status: string | null;
+    joined_at: string | null;
+    member_count: number;
+    created_at: string;
+}
+
 export interface UserStats {
     total_users: { value: number; change: string; trend: 'up' | 'down' };
     verified_users: { value: number; change: string; trend: 'up' | 'down' };
@@ -133,6 +150,10 @@ export const userService = {
     },
     impersonateUser: async (id: string): Promise<{ data: { url: string } }> => {
         const response = await api.post(`/api/v1/admin/users/${id}/impersonate`);
+        return response.data;
+    },
+    getUserWorkspaces: async (id: string): Promise<{ data: UserWorkspace[] }> => {
+        const response = await api.get(`/api/v1/admin/users/${id}/workspaces`);
         return response.data;
     },
 };
