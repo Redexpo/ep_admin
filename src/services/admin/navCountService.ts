@@ -19,6 +19,7 @@ export interface NavCounts {
     admins: number;
     ips: number;
     assignments: number;
+    signup_domains: number;
 }
 
 export async function fetchNavCounts(): Promise<NavCounts> {

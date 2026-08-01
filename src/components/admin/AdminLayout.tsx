@@ -8,7 +8,7 @@ import {
     LayoutDashboard, Users, Video, AlertCircle, BarChart3,
     HardDrive, Layers, Shield, Globe, Settings, Search,
     Bell, ChevronDown, LogOut, ScrollText, Repeat, Receipt,
-    PanelLeftClose, PanelLeftOpen, Building2, FolderOpen, MessageSquare, Briefcase, Camera, MessageCircle, FileText, Landmark, Package, Tag, Webhook, Gift, Newspaper,
+    PanelLeftClose, PanelLeftOpen, Building2, FolderOpen, MessageSquare, Briefcase, Camera, MessageCircle, FileText, Landmark, Package, Tag, Webhook, Gift, Newspaper, AtSign,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import AuthGuard from '@/components/auth/AuthGuard';
@@ -63,8 +63,9 @@ const navGroups: {
             { name: 'Notifications',  path: '/admin/notifications',   icon: Bell,          countKey: 'notifications'  },
             { name: 'Contact Us',     path: '/admin/contacts/us',     icon: MessageSquare, countKey: 'contacts_us'    },
             { name: 'Contact Sales',  path: '/admin/contacts/sales',  icon: Briefcase,     countKey: 'contacts_sales' },
-            { name: 'Blog',           path: '/admin/blog',            icon: Newspaper                                 },
-            { name: 'Blog Categories', path: '/admin/blog/categories', icon: Tag                                      },
+            { name: 'Blog',           path: '/admin/blog',            icon: Newspaper                                     },
+            { name: 'Blog Categories', path: '/admin/blog/categories', icon: Tag                                        },
+            { name: 'Signup Domains', path: '/admin/signup-domains',  icon: AtSign, countKey: 'signup_domains'          },
         ],
     },
     {
