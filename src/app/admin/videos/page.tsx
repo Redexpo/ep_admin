@@ -23,9 +23,23 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { videoService, Video, VideoStats } from '@/services/admin/videoService';
 import { toast } from 'sonner';
 
+const PER_PAGE_OPTIONS = [10, 20, 50, 100] as const;
+const DEFAULT_PER_PAGE = 20;
+const PER_PAGE_STORAGE_KEY = 'admin.videos.perPage';
+
+function readStoredPerPage(): number {
+    if (typeof window === 'undefined') return DEFAULT_PER_PAGE;
+    const raw = window.localStorage.getItem(PER_PAGE_STORAGE_KEY);
+    const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+    return PER_PAGE_OPTIONS.includes(parsed as (typeof PER_PAGE_OPTIONS)[number])
+        ? parsed
+        : DEFAULT_PER_PAGE;
+}
+
 export default function AdminVideosPage() {
     const [isDarkMode] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [perPage, setPerPage] = useState<number>(DEFAULT_PER_PAGE);
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [videos, setVideos] = useState<Video[]>([]);
     const [stats, setStats] = useState<VideoStats | null>(null);
@@ -34,8 +48,26 @@ export default function AdminVideosPage() {
     const [pagination, setPagination] = useState({
         total: 0,
         totalPages: 0,
-        perPage: 10
+        perPage: DEFAULT_PER_PAGE
     });
+
+    // Hydrate perPage from localStorage after mount (avoids SSR mismatch).
+    useEffect(() => {
+        const stored = readStoredPerPage();
+        if (stored !== perPage) {
+            setPerPage(stored);
+        }
+        // Only on mount.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handlePerPageChange = useCallback((next: number) => {
+        setPerPage(next);
+        setCurrentPage(1);
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(PER_PAGE_STORAGE_KEY, String(next));
+        }
+    }, []);
 
     const fetchStats = useCallback(async () => {
         try {
@@ -49,10 +81,10 @@ export default function AdminVideosPage() {
         }
     }, []);
 
-    const fetchVideos = useCallback(async (page: number) => {
+    const fetchVideos = useCallback(async (page: number, size: number) => {
         try {
             setIsLoading(true);
-            const response = await videoService.getVideos(page, 10);
+            const response = await videoService.getVideos(page, size);
             if (response.status === 'success') {
                 setVideos(response.data.results);
                 setPagination({
@@ -69,9 +101,9 @@ export default function AdminVideosPage() {
     }, []);
 
     useEffect(() => {
-        fetchVideos(currentPage);
+        fetchVideos(currentPage, perPage);
         fetchStats();
-    }, [currentPage, fetchVideos, fetchStats]);
+    }, [currentPage, perPage, fetchVideos, fetchStats]);
 
     const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -509,12 +541,37 @@ export default function AdminVideosPage() {
                             borderTop: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0'}`,
                         }}
                     >
-                        <span
-                            className="text-[13px] leading-[20px]"
-                            style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
-                        >
-                            Showing {(currentPage - 1) * pagination.perPage + 1}-{Math.min(currentPage * pagination.perPage, pagination.total)} of {pagination.total.toLocaleString()} videos
-                        </span>
+                        <div className="flex items-center gap-4">
+                            <span
+                                className="text-[13px] leading-[20px]"
+                                style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
+                            >
+                                Showing {(currentPage - 1) * pagination.perPage + 1}-{Math.min(currentPage * pagination.perPage, pagination.total)} of {pagination.total.toLocaleString()} videos
+                            </span>
+                            <label
+                                className="flex items-center gap-2 text-[13px] leading-[20px]"
+                                style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}
+                            >
+                                Per page
+                                <select
+                                    value={perPage}
+                                    onChange={(e) => handlePerPageChange(Number(e.target.value))}
+                                    disabled={isLoading}
+                                    className="h-8 rounded-md border px-2 text-[13px] outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-60"
+                                    style={{
+                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
+                                        borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E2E8F0',
+                                        color: isDarkMode ? '#F1F5F9' : '#0F172A',
+                                    }}
+                                >
+                                    {PER_PAGE_OPTIONS.map((opt) => (
+                                        <option key={opt} value={opt}>
+                                            {opt}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
