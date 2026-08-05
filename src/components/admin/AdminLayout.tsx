@@ -8,7 +8,7 @@ import {
     LayoutDashboard, Users, Video, AlertCircle, BarChart3,
     HardDrive, Layers, Shield, Globe, Settings, Search,
     Bell, ChevronDown, LogOut, ScrollText, Repeat, Receipt,
-    PanelLeftClose, PanelLeftOpen, Building2, FolderOpen, MessageSquare, Briefcase, Camera, MessageCircle, FileText, Landmark, Package, Tag, Webhook, Gift, Newspaper, AtSign,
+    PanelLeftClose, PanelLeftOpen, Building2, FolderOpen, MessageSquare, Briefcase, Camera, MessageCircle, FileText, Landmark, Package, Tag, Webhook, Gift, Newspaper, AtSign, Activity,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import AuthGuard from '@/components/auth/AuthGuard';
@@ -26,8 +26,9 @@ const navGroups: {
     {
         label: 'Overview',
         items: [
-            { name: 'Dashboard',  path: '/admin',            icon: LayoutDashboard },
-            { name: 'Analytics',  path: '/admin/analytics',  icon: BarChart3 },
+            { name: 'Dashboard',   path: '/admin',             icon: LayoutDashboard },
+            { name: 'Analytics',   path: '/admin/analytics',   icon: BarChart3 },
+            { name: 'Recordings',  path: '/admin/analytics/recordings',  icon: Activity },
         ],
     },
     {
