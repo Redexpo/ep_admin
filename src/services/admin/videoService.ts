@@ -137,7 +137,7 @@ export const videoService = {
         const response = await api.get(`/api/v1/admin/videos/${id}/logs`);
         return response.data;
     },
-    getGenerationTypes: async (): Promise<{ data: GenerationType[] }> => {
+    getGenerationTypes: async (): Promise<GenerationType[]> => {
         const response = await api.get('/api/v1/admin/generation-types');
         return response.data;
     },

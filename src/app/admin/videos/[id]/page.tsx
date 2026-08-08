@@ -113,7 +113,7 @@ export default function VideoDetailPage() {
                     videoService.getGenerationTypes(),
                     videoService.getRecordingArtifacts(video.encrypted_id),
                 ]);
-                setGenerationTypes(typesRes.data || []);
+                setGenerationTypes(typesRes || []);
                 setArtifacts(artifactsRes.data || []);
             } catch {
                 toast.error('Failed to load generation data');
