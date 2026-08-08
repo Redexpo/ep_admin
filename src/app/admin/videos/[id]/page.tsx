@@ -635,7 +635,9 @@ export default function VideoDetailPage() {
 
                         {activeTab === 'generate' && (() => {
                             const supportedIds = video.supported_generation_type_ids ?? [];
-                            const supportedTypes = generationTypes.filter(t => supportedIds.includes(t.id));
+                            const artifactTypeIds = [...new Set(artifacts.map(a => a.generation_type_id))];
+                            const allRelevantIds = [...new Set([...supportedIds, ...artifactTypeIds])];
+                            const supportedTypes = generationTypes.filter(t => allRelevantIds.includes(t.id));
                             const selectedArtifacts = selectedTypeId
                                 ? artifacts.filter(a => a.generation_type_id === selectedTypeId)
                                 : [];
