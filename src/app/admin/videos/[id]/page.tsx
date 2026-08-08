@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import {
     ArrowLeft,
     Video,
@@ -727,11 +730,13 @@ export default function VideoDetailPage() {
                                                                         </div>
                                                                     )}
 
-                                                                    {/* Content preview */}
-                                                                    <div className="bg-slate-50 rounded-2xl p-4 max-h-48 overflow-y-auto">
-                                                                        <pre className="text-[12px] text-slate-600 whitespace-pre-wrap font-mono leading-relaxed">
-                                                                            {artifact.content}
-                                                                        </pre>
+                                                                    {/* Content */}
+                                                                    <div className="bg-slate-50 rounded-2xl p-6 overflow-y-auto" style={{ maxHeight: '600px' }}>
+                                                                        <div className="artifact-content">
+                                                                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                                                                                {artifact.content}
+                                                                            </ReactMarkdown>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             ))}
