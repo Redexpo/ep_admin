@@ -365,7 +365,7 @@ export default function VideoDetailPage() {
                                             {video.chapters.map((chapter: any, i: number) => (
                                                 <div key={i} className="flex items-center gap-6 p-5 rounded-3xl border border-slate-100 hover:border-purple-100 hover:bg-purple-50/30 transition-all cursor-pointer">
                                                     <span className="font-mono text-[13px] font-black text-[#8c00ff] px-3 py-1 bg-white rounded-xl shadow-sm border border-purple-50">
-                                                        {formatDuration(chapter.timestamp)}
+                                                        {formatDuration(chapter.start_time ?? 0)}
                                                     </span>
                                                     <p className="font-black text-[#0F172A]">{chapter.title}</p>
                                                 </div>
