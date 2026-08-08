@@ -142,7 +142,7 @@ export const videoService = {
         return response.data;
     },
     getRecordingArtifacts: async (recordingId: string): Promise<{ data: GeneratedArtifact[] }> => {
-        const response = await api.get(`/api/v1/generate/recordings/${recordingId}/artifacts`);
+        const response = await api.get(`/api/v1/admin/videos/${recordingId}/artifacts`);
         return response.data;
     },
 };
