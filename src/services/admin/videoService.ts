@@ -52,6 +52,35 @@ export interface Video {
     source_info?: Record<string, any> | null;
 }
 
+export interface GenerationType {
+    id: string;
+    name: string;
+    slug: string;
+    category: string;
+    short_description?: string;
+    is_active: boolean;
+}
+
+export interface ArtifactDelivery {
+    platform: string;
+    destination: string;
+    delivered_at: string;
+}
+
+export interface GeneratedArtifact {
+    id: string;
+    recording_encrypted_id: string;
+    generation_type: string;
+    generation_type_id: string;
+    content: string;
+    title?: string;
+    generated_by: string;
+    params?: Record<string, any>;
+    sent_to?: ArtifactDelivery[];
+    created_at: string;
+    updated_at?: string;
+}
+
 export interface AppLog {
     level: 'INFO' | 'WARNING' | 'ERROR' | 'CRITICAL';
     service: string;
@@ -106,6 +135,14 @@ export const videoService = {
     },
     getVideoLogs: async (id: string): Promise<{ status: string; data: AppLog[] }> => {
         const response = await api.get(`/api/v1/admin/videos/${id}/logs`);
+        return response.data;
+    },
+    getGenerationTypes: async (): Promise<{ data: GenerationType[] }> => {
+        const response = await api.get('/api/v1/admin/generation-types');
+        return response.data;
+    },
+    getRecordingArtifacts: async (recordingId: string): Promise<{ data: GeneratedArtifact[] }> => {
+        const response = await api.get(`/api/v1/generate/recordings/${recordingId}/artifacts`);
         return response.data;
     },
 };

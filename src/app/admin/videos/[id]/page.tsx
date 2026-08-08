@@ -44,7 +44,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { InfoTable, CellValue, toLabel } from '@/components/admin/InfoTable';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { AdminVideoPlayer } from '@/components/ui/AdminVideoPlayer';
-import { videoService, Video as VideoType, ViewRecord, AppLog } from '@/services/admin/videoService';
+import { videoService, Video as VideoType, ViewRecord, AppLog, GenerationType, GeneratedArtifact } from '@/services/admin/videoService';
 import { toast } from 'sonner';
 import { DASHBOARD_APP_URL, MEDIA_API_URL } from '@/lib/constants';
 
@@ -55,13 +55,18 @@ export default function VideoDetailPage() {
 
     const [video, setVideo] = useState<VideoType | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'transcription' | 'reports' | 'views' | 'tech' | 'logs'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'transcription' | 'reports' | 'views' | 'tech' | 'logs' | 'generate'>('overview');
     const [isDeleting, setIsDeleting] = useState(false);
     const [logs, setLogs] = useState<AppLog[]>([]);
     const [logsLoading, setLogsLoading] = useState(false);
     const [logsFetched, setLogsFetched] = useState(false);
     const [logFilter, setLogFilter] = useState<string | null>(null);
     const [showJsonModal, setShowJsonModal] = useState(false);
+    const [generationTypes, setGenerationTypes] = useState<GenerationType[]>([]);
+    const [artifacts, setArtifacts] = useState<GeneratedArtifact[]>([]);
+    const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
+    const [generateFetched, setGenerateFetched] = useState(false);
+    const [artifactsLoading, setArtifactsLoading] = useState(false);
 
     const fetchVideoData = useCallback(async () => {
         try {
@@ -98,6 +103,27 @@ export default function VideoDetailPage() {
         };
         fetchLogs();
     }, [activeTab, logsFetched, video?.encrypted_id]);
+
+    useEffect(() => {
+        if (activeTab !== 'generate' || generateFetched || !video?.encrypted_id) return;
+        const fetchGenerateData = async () => {
+            setArtifactsLoading(true);
+            try {
+                const [typesRes, artifactsRes] = await Promise.all([
+                    videoService.getGenerationTypes(),
+                    videoService.getRecordingArtifacts(video.encrypted_id),
+                ]);
+                setGenerationTypes(typesRes.data || []);
+                setArtifacts(artifactsRes.data || []);
+            } catch {
+                toast.error('Failed to load generation data');
+            } finally {
+                setArtifactsLoading(false);
+                setGenerateFetched(true);
+            }
+        };
+        fetchGenerateData();
+    }, [activeTab, generateFetched, video?.encrypted_id]);
 
     const handleReportStatus = async (reportId: string, status: string) => {
         try {
@@ -239,6 +265,7 @@ export default function VideoDetailPage() {
                             { id: 'views', label: `Views (${video.views_list?.length || video.views || 0})`, icon: Eye },
                             { id: 'tech', label: 'Technical Info', icon: Activity },
                             { id: 'logs', label: 'Activity Log', icon: ScrollText },
+                            { id: 'generate', label: `Generate (${video.supported_generation_type_ids?.length || 0})`, icon: Zap },
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -605,6 +632,116 @@ export default function VideoDetailPage() {
                                 })()}
                             </div>
                         )}
+
+                        {activeTab === 'generate' && (() => {
+                            const supportedIds = video.supported_generation_type_ids ?? [];
+                            const supportedTypes = generationTypes.filter(t => supportedIds.includes(t.id));
+                            const selectedArtifacts = selectedTypeId
+                                ? artifacts.filter(a => a.generation_type_id === selectedTypeId)
+                                : [];
+
+                            return (
+                                <div className="bg-white rounded-[40px] border border-[#E2E8F0] p-10 space-y-8 animate-in fade-in zoom-in-95 duration-300">
+                                    <h2 className="text-[24px] font-black text-[#0F172A]">AI Document Generation</h2>
+
+                                    {artifactsLoading ? (
+                                        <div className="flex items-center justify-center py-20">
+                                            <div className="w-8 h-8 border-2 border-[#8c00ff] border-t-transparent rounded-full animate-spin" />
+                                        </div>
+                                    ) : supportedTypes.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-[32px] border border-dashed border-slate-200">
+                                            <Zap size={48} className="text-slate-200 mb-4" />
+                                            <p className="font-bold text-slate-400">No supported generation types for this recording.</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Type chips */}
+                                            <div className="flex flex-wrap gap-3">
+                                                {supportedTypes.map(type => (
+                                                    <button
+                                                        key={type.id}
+                                                        onClick={() => setSelectedTypeId(selectedTypeId === type.id ? null : type.id)}
+                                                        className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-[13px] font-bold border transition-all ${
+                                                            selectedTypeId === type.id
+                                                                ? 'bg-[#8c00ff] text-white border-[#8c00ff] shadow-lg shadow-purple-200'
+                                                                : 'bg-white text-[#0F172A] border-[#E2E8F0] hover:border-[#8c00ff] hover:text-[#8c00ff]'
+                                                        }`}
+                                                    >
+                                                        <Zap size={13} />
+                                                        {type.name}
+                                                        {(() => {
+                                                            const count = artifacts.filter(a => a.generation_type_id === type.id).length;
+                                                            return count > 0 ? (
+                                                                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${selectedTypeId === type.id ? 'bg-white/20' : 'bg-purple-100 text-[#8c00ff]'}`}>
+                                                                    {count}
+                                                                </span>
+                                                            ) : null;
+                                                        })()}
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            {/* Artifacts list */}
+                                            {selectedTypeId && (
+                                                <div className="space-y-4 pt-2">
+                                                    <h3 className="text-[16px] font-black text-[#0F172A]">
+                                                        {supportedTypes.find(t => t.id === selectedTypeId)?.name} — Generated Documents
+                                                    </h3>
+
+                                                    {selectedArtifacts.length === 0 ? (
+                                                        <div className="flex flex-col items-center justify-center py-16 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                                            <FileText size={40} className="text-slate-200 mb-3" />
+                                                            <p className="font-bold text-slate-400 text-sm">No documents generated yet for this type.</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="grid gap-4">
+                                                            {selectedArtifacts.map(artifact => (
+                                                                <div key={artifact.id} className="rounded-3xl border border-[#E2E8F0] p-6 space-y-4 hover:border-purple-200 transition-all">
+                                                                    {/* Header */}
+                                                                    <div className="flex items-start justify-between gap-4">
+                                                                        <div>
+                                                                            <p className="font-black text-[#0F172A] text-[15px]">{artifact.title || 'Untitled'}</p>
+                                                                            <p className="text-[12px] text-slate-400 mt-0.5">{formatDate(artifact.created_at)}</p>
+                                                                        </div>
+                                                                        {artifact.sent_to && artifact.sent_to.length > 0 && (
+                                                                            <div className="flex gap-1.5 flex-wrap justify-end">
+                                                                                {artifact.sent_to.map((d, i) => (
+                                                                                    <span key={i} className="px-2 py-1 bg-green-50 text-green-700 text-[11px] font-bold rounded-lg capitalize">
+                                                                                        {d.platform} → {d.destination}
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Params */}
+                                                                    {artifact.params && Object.keys(artifact.params).length > 0 && (
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {Object.entries(artifact.params).map(([k, v]) => (
+                                                                                <span key={k} className="px-2 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-lg">
+                                                                                    {k}: {String(v)}
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Content preview */}
+                                                                    <div className="bg-slate-50 rounded-2xl p-4 max-h-48 overflow-y-auto">
+                                                                        <pre className="text-[12px] text-slate-600 whitespace-pre-wrap font-mono leading-relaxed">
+                                                                            {artifact.content}
+                                                                        </pre>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            );
+                        })()}
 
                         {activeTab === 'tech' && (
                             <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
